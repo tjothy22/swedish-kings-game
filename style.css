@@ -1,53 +1,45 @@
 /* Basic body styling */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 8px; /* Slightly reduced padding */
+    padding: 5px; /* Further reduced padding */
     background-color: #3a6f3a;
     background-image: radial-gradient(ellipse at center, #5a8f5a 20%, #3a6f3a 100%);
     color: #333;
     margin: 0;
-    font-size: 0.95em; /* Slightly reduce base font size */
+    font-size: 0.9em; /* *** REDUCED base font size *** */
 }
 
 /* Center title area */
-.title-area { text-align: center; margin-bottom: 15px; position: relative; padding-top: 8px;} /* Reduced margins */
-h1 { margin-bottom: 0.2em; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); font-size: 1.8em; } /* Reduced font size */
-h2 { text-align: center; margin-top: 0.4em; margin-bottom: 0.4em; color: #444; font-size: 1.1em;} /* Reduced font size */
-h3 { text-align: center; margin-top: 0.4em; margin-bottom: 0.4em; color: #555; font-size: 0.8em; text-transform: uppercase; } /* Reduced font size */
+.title-area { text-align: center; margin-bottom: 10px; position: relative; padding-top: 5px;} /* Reduced margins */
+h1 { margin-bottom: 0.1em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); font-size: 1.6em; } /* *** REDUCED font size *** */
+h2 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #444; font-size: 1.0em;} /* *** REDUCED font size *** */
+h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; font-size: 0.75em; text-transform: uppercase; } /* *** REDUCED font size *** */
 
 /* Page Container Styles */
 .page-container {
-    max-width: 1000px; /* *** REDUCED max-width from 1200px *** */
+    max-width: 850px; /* *** FURTHER REDUCED max-width *** */
     margin: 0 auto; /* Center content */
-    padding: 10px; /* Reduced padding */
+    padding: 8px; /* Reduced padding */
     background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px; /* Slightly smaller radius */
+    border-radius: 6px;
 }
 
 /* Rules Page Specific Styles */
-#rules-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 15px; }
+#rules-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 12px; }
 .rules-content {
     background-color: rgba(255, 255, 255, 0.8);
-    padding: 15px; /* Reduced padding */
-    border-radius: 6px;
-    margin-bottom: 15px;
+    padding: 12px; /* Reduced padding */
+    border-radius: 5px;
+    margin-bottom: 12px;
     color: #333;
     text-align: left;
-    font-size: 0.95em; /* Slightly smaller rules text */
+    font-size: 0.9em; /* Slightly smaller rules text */
 }
 .rules-content h3 {
-    color: #3a6f3a;
-    border-bottom: 2px solid #3a6f3a;
-    padding-bottom: 4px;
-    margin-top: 12px;
-    margin-bottom: 8px;
-    text-align: left;
+    color: #3a6f3a; border-bottom: 1px solid #3a6f3a; padding-bottom: 3px; margin-top: 10px; margin-bottom: 6px; text-align: left;
 }
-.rules-content ul, .rules-content ol {
-    margin-left: 18px;
-    line-height: 1.5; /* Slightly tighter line spacing */
-}
-.rules-content ul li { margin-bottom: 4px; }
+.rules-content ul, .rules-content ol { margin-left: 16px; line-height: 1.45; }
+.rules-content ul li { margin-bottom: 3px; }
 .rules-content strong { color: #c82333; }
 
 /* Button Styles */
@@ -55,48 +47,40 @@ h3 { text-align: center; margin-top: 0.4em; margin-bottom: 0.4em; color: #555; f
 #export-logs-button,
 #player-actions button,
 .nav-button {
-    padding: 8px 16px; /* Reduced padding */
-    font-size: 0.9em; /* Reduced font size */
-    font-weight: bold; margin: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 2px; /* Thinner border */ cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
+    padding: 6px 12px; /* *** REDUCED padding *** */
+    font-size: 0.85em; /* *** REDUCED font size *** */
+    font-weight: bold; margin: 3px 6px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 2px; cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
 }
 #player-actions button { background-color: #4CAF50; background-image: linear-gradient(to bottom, #5cb85c, #449d44); border-color: #398439; }
 #new-game-button { background-color: #dc3545; background-image: linear-gradient(to bottom, #d9534f, #c9302c); border-color: #ac2925; }
-#export-logs-button { background-color: #17a2b8; background-image: linear-gradient(to bottom, #5bc0de, #31b0d5); border-color: #2a96b1; display: block; margin: 12px auto; }
-.nav-button {
-    background-color: #007bff;
-    background-image: linear-gradient(to bottom, #269abc, #007bff);
-    border-color: #0056b3;
-    display: inline-block;
-    margin: 8px 4px;
-}
-#start-game-button { display: block; width: 140px; margin: 15px auto 0 auto; }
+#export-logs-button { background-color: #17a2b8; background-image: linear-gradient(to bottom, #5bc0de, #31b0d5); border-color: #2a96b1; display: block; margin: 10px auto; }
+.nav-button { background-color: #007bff; background-image: linear-gradient(to bottom, #269abc, #007bff); border-color: #0056b3; display: inline-block; margin: 6px 3px; }
+#start-game-button { display: block; width: 120px; margin: 12px auto 0 auto; }
 
-/* Button Hover States */
-#player-actions button:hover:not(:disabled) { background-color: #5cb85c; background-image: linear-gradient(to bottom, #67c167, #4cae4c); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
-#new-game-button:hover:not(:disabled) { background-color: #d9534f; background-image: linear-gradient(to bottom, #e06763, #d43f3a); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
-#export-logs-button:hover:not(:disabled) { background-color: #5bc0de; background-image: linear-gradient(to bottom, #6fcae6, #39b3d7); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
-.nav-button:hover:not(:disabled) { background-color: #269abc; background-image: linear-gradient(to bottom, #31b0d5, #269abc); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
+/* Button Hover/Active States (simplified slightly) */
+#player-actions button:hover:not(:disabled),
+#new-game-button:hover:not(:disabled),
+#export-logs-button:hover:not(:disabled),
+.nav-button:hover:not(:disabled) { box-shadow: 0 2px 4px rgba(0,0,0,0.3); top: -1px; filter: brightness(1.1); } /* Added brightness */
 
-/* Button Active (Pressed) States */
 #new-game-button:active:not(:disabled),
 #export-logs-button:active:not(:disabled),
 #player-actions button:active:not(:disabled),
-.nav-button:active:not(:disabled) { top: 1px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); border-bottom-width: 1px; } /* Adjusted active state */
+.nav-button:active:not(:disabled) { top: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.2); border-bottom-width: 1px; filter: brightness(0.95); }
 
-/* Disabled Button State */
 #player-actions button:disabled { background-color: #ccc; background-image: none; border-color: #bbb; color: #999; cursor: not-allowed; box-shadow: none; text-shadow: none; }
 
 /* Game Page Specific Styles */
-.game-nav-buttons { text-align: center; margin-bottom: 10px; }
+.game-nav-buttons { text-align: center; margin-bottom: 8px; }
 
 /* Game board grid layout */
 #game-board {
     display: grid;
-    grid-template-columns: 1fr 2.2fr 1fr; /* Adjusted middle column proportion */
+    grid-template-columns: 1fr 2fr 1fr; /* *** Adjusted middle column proportion *** */
     grid-template-rows: auto auto;
-    gap: 10px; /* *** REDUCED gap *** */
+    gap: 8px; /* *** FURTHER REDUCED gap *** */
     align-items: start;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 #computer-1 { grid-column: 1; grid-row: 1; }
 #play-area { grid-column: 2; grid-row: 1; text-align: center;}
@@ -105,106 +89,73 @@ h3 { text-align: center; margin-top: 0.4em; margin-bottom: 0.4em; color: #555; f
 
 /* Styling for each player's area */
 .player-area {
-    border: 2px solid #ccc; padding: 10px; /* *** REDUCED padding *** */
-    min-height: 130px; /* *** REDUCED min-height *** */
-    background-color: rgba(255, 255, 255, 0.1); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1), inset 0 0 8px rgba(0,0,0,0.1); /* Adjusted shadow */
+    border: 1px solid #ccc; padding: 8px; /* *** REDUCED padding & border *** */
+    min-height: 110px; /* *** REDUCED min-height *** */
+    background-color: rgba(255, 255, 255, 0.08); border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 0 6px rgba(0,0,0,0.1);
     transition: border-color 0.4s ease-in-out, box-shadow 0.4s ease-in-out, opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
 }
 .player-area.current-player {
-    border-color: #ffc107;
-    box-shadow: 0 0 12px rgba(255, 193, 7, 0.5), inset 0 0 8px rgba(0,0,0,0.1); /* Adjusted shadow */
+    border-color: #ffc107; border-width: 2px; /* Make highlight stand out more */
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5), inset 0 0 6px rgba(0,0,0,0.1);
 }
-.player-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1em; margin-bottom: 5px; } /* Reduced H2 size */
+.player-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 0.95em; margin-bottom: 4px; } /* Reduced H2 size */
 
 /* Style for passed players */
-.player-area.player-passed {
-    opacity: 0.6; filter: grayscale(50%); border-color: #888;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 0 5px rgba(0,0,0,0.1);
-}
-.player-area.player-passed:not(.player-wins) { border-color: #888; }
-.player-area.current-player.player-passed:not(.player-wins) {
-     border-color: #aaa; box-shadow: 0 0 6px rgba(170, 170, 170, 0.4), inset 0 0 5px rgba(0,0,0,0.1);
-}
+.player-area.player-passed { opacity: 0.55; filter: grayscale(60%); border-color: #777; box-shadow: 0 1px 1px rgba(0,0,0,0.1), inset 0 0 4px rgba(0,0,0,0.1); }
+.player-area.player-passed:not(.player-wins) { border-color: #777; border-width: 1px; } /* Ensure border stays thin */
+.player-area.current-player.player-passed:not(.player-wins) { border-color: #999; border-width: 1px; box-shadow: 0 0 4px rgba(150, 150, 150, 0.4), inset 0 0 4px rgba(0,0,0,0.1); }
 
 /* Player Info Container */
-.player-info { text-align: center; margin-bottom: 8px; font-size: 0.9em; color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); } /* Reduced font size */
-.card-count { font-weight: bold; margin-right: 8px; }
+.player-info { text-align: center; margin-bottom: 6px; font-size: 0.85em; color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
+.card-count { font-weight: bold; margin-right: 6px; }
 
 /* General styling for hand display areas */
-.hand { display: flex; flex-wrap: wrap; justify-content: center; min-height: 30px; /* Reduced height */ gap: 3px; /* *** REDUCED gap *** */ padding-top: 3px; padding-bottom: 3px; }
-.hand-group-container { margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 4px; }
-.hand-group-container label { display: block; text-align: left; font-size: 0.85em; color: #ddd; margin-bottom: 2px; margin-left: 4px; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
-.hand-group { min-height: 55px; /* *** REDUCED min-height *** */ background-color: rgba(0,0,0,0.1); border-radius: 3px; padding: 4px; }
+.hand { display: flex; flex-wrap: wrap; justify-content: center; min-height: 25px; gap: 2px; /* *** REDUCED gap *** */ padding-top: 2px; padding-bottom: 2px; }
+.hand-group-container { margin-bottom: 6px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 3px; }
+.hand-group-container label { display: block; text-align: left; font-size: 0.8em; color: #ddd; margin-bottom: 2px; margin-left: 3px; text-shadow: none; }
+.hand-group { min-height: 48px; /* *** REDUCED min-height *** */ background-color: rgba(0,0,0,0.08); border-radius: 2px; padding: 3px; }
 
 /* Styling for individual cards */
 .card {
-    border: 1px solid black; padding: 8px 4px; /* *** REDUCED padding *** */
-    min-width: 40px; /* *** REDUCED min-width *** */
-    min-height: 60px; /* *** REDUCED min-height *** */
-    text-align: center; background-color: white; border-radius: 3px; /* Slightly smaller radius */ cursor: pointer; user-select: none; display: inline-flex; justify-content: center; align-items: center;
-    font-size: 12px; /* *** REDUCED font-size *** */
-    font-weight: bold; box-sizing: border-box; box-shadow: 1px 1px 1px rgba(0,0,0,0.2); /* Reduced shadow */
-    transition: transform 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    border: 1px solid black; padding: 6px 3px; /* *** REDUCED padding *** */
+    min-width: 34px; /* *** REDUCED min-width *** */
+    min-height: 52px; /* *** REDUCED min-height *** */
+    text-align: center; background-color: white; border-radius: 2px; /* *** REDUCED radius *** */ cursor: pointer; user-select: none; display: inline-flex; justify-content: center; align-items: center;
+    font-size: 10px; /* *** REDUCED font-size *** */
+    font-weight: bold; box-sizing: border-box; box-shadow: 1px 1px 1px rgba(0,0,0,0.15);
+    transition: transform 0.1s ease-in-out, border-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out; /* Faster transition */
     position: relative;
 }
-.card.selected {
-    border-color: #ffc107;
-    border-width: 2px; /* Thinner selected border */
-    transform: translateY(-3px) scale(1.02); /* Slightly less lift */
-    box-shadow: 2px 4px 5px rgba(255, 193, 7, 0.4); /* Adjusted shadow */
-}
-.card-back { background-color: #6c757d; background-image: linear-gradient(135deg, #6c757d 25%, #495057 25%, #495057 50%, #6c757d 50%, #6c757d 75%, #495057 75%, #495057 100%); background-size: 30px 30px; /* Smaller pattern */ color: transparent; border: 1px solid #343a40; cursor: default; }
+.card.selected { border-color: #ffc107; border-width: 2px; transform: translateY(-2px) scale(1.01); box-shadow: 1px 2px 3px rgba(255, 193, 7, 0.4); }
+.card-back { background-color: #6c757d; background-image: linear-gradient(135deg, #6c757d 25%, #495057 25%, #495057 50%, #6c757d 50%, #6c757d 75%, #495057 75%, #495057 100%); background-size: 25px 25px; color: transparent; border: 1px solid #343a40; cursor: default; }
 
 /* Styling for the central play area sections */
-#play-area { background-color: rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 8px; }
-#play-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1.1em; }
-#play-area h3 { font-size: 0.9em; color: #eee; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
-#play-log-area { margin-bottom: 10px; text-align: left; max-height: 120px; /* Reduced height */ overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); background-color: rgba(255,255,255,0.7); padding: 4px; border-radius: 3px; }
-#play-log .log-entry { font-size: 0.85em; margin-bottom: 2px; padding-bottom: 2px; border-bottom: 1px dotted #ccc; color: #333; }
+#play-area { background-color: rgba(255, 255, 255, 0.12); border-radius: 5px; padding: 6px; }
+#play-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1em; margin-bottom: 4px;}
+#play-area h3 { font-size: 0.85em; color: #eee; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 1px; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
+#play-log-area { margin-bottom: 8px; text-align: left; max-height: 100px; /* Reduced height */ overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); background-color: rgba(255,255,255,0.7); padding: 3px; border-radius: 2px; }
+#play-log .log-entry { font-size: 0.8em; margin-bottom: 1px; padding-bottom: 1px; border-bottom: 1px dotted #ccc; color: #333; line-height: 1.3; }
 #play-log .log-entry:last-child { border-bottom: none; margin-bottom: 0; }
-#play-log .log-event-round-end { font-weight: bold; color: #155724; background-color: #d4edda; padding: 2px; border-radius: 2px; border-bottom-style: solid; text-align: center; }
+#play-log .log-event-round-end { font-weight: bold; color: #155724; background-color: #d4edda; padding: 2px; border-radius: 2px; }
 #play-log .log-event-pass { color: #555; font-style: italic; text-align: center; border-bottom-style: dashed; }
-#last-played-area { margin-top: 8px; }
-#last-played { min-height: 65px; /* Reduced height */ display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; /* Reduced gap */ padding: 8px; border: 1px dashed #aaa; border-radius: 3px; background-color: rgba(255,255,255,0.7); }
-#last-played .card {
-    cursor: default; box-shadow: none;
-    animation: cardPlayedAnimation 0.5s ease-out forwards;
-}
-#play-area > p { margin-bottom: 10px; font-weight: bold; font-size: 1em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); } /* Status message */
+#last-played-area { margin-top: 6px; }
+#last-played { min-height: 58px; /* Reduced height */ display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; padding: 6px; border: 1px dashed #aaa; border-radius: 2px; background-color: rgba(255,255,255,0.7); }
+#last-played .card { cursor: default; box-shadow: none; animation: cardPlayedAnimation 0.4s ease-out forwards; } /* Faster animation */
+#play-area > p { margin-bottom: 8px; font-weight: bold; font-size: 0.95em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); } /* Status message */
 
-/* *** NEW STYLE for Last Play Description *** */
-.last-played-text {
-    text-align: center;
-    color: #eee;
-    font-size: 0.9em;
-    font-style: italic;
-    margin-top: 5px; /* Space above text */
-    margin-bottom: 0; /* Reset bottom margin */
-    min-height: 1.2em; /* Prevent layout shift when empty */
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-}
+/* Last Play Description Text */
+.last-played-text { text-align: center; color: #eee; font-size: 0.85em; font-style: italic; margin-top: 4px; margin-bottom: 0; min-height: 1.1em; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
 
+/* Player action buttons area */
+#player-actions { margin-top: 8px; text-align: center; }
 
-/* Styling for the player action buttons area */
-#player-actions { margin-top: 10px; text-align: center; }
-
-/* Styles for Export Controls */
-#export-controls { margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; background-color: rgba(255, 255, 255, 0.1); color: #eee; }
-#export-controls h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); font-size: 1.1em; }
-#export-controls p { color: #ddd; font-size: 0.9em; }
-#export-controls textarea { width: 100%; margin-top: 8px; font-family: monospace; box-sizing: border-box; min-height: 100px; /* Reduced height */ background-color: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.85em; }
+/* Export Controls */
+#export-controls { margin-top: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; background-color: rgba(255, 255, 255, 0.08); color: #eee; }
+#export-controls h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); font-size: 1.0em; }
+#export-controls p { color: #ddd; font-size: 0.85em; margin: 4px 0;}
+#export-controls textarea { width: 100%; margin-top: 6px; font-family: monospace; box-sizing: border-box; min-height: 80px; background-color: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.8em; }
 
 /* --- Animations --- */
-@keyframes cardPlayedAnimation {
-  from { opacity: 0; transform: scale(0.8) translateY(-10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-@keyframes winnerPulse {
-  0% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.6), inset 0 0 12px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); }
-  50% { border-color: #ccffcc; box-shadow: 0 0 25px rgba(100, 255, 100, 0.8), inset 0 0 12px rgba(0,0,0,0.1); transform: scale(1.02); opacity: 1; filter: grayscale(0%); }
-  100% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.6), inset 0 0 12px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); }
-}
-.player-area.player-wins {
-  animation: winnerPulse 1.5s ease-in-out infinite; border-width: 3px;
-  opacity: 1 !important; filter: grayscale(0%) !important;
-}
+@keyframes cardPlayedAnimation { from { opacity: 0; transform: scale(0.8) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } } /* Adjusted transform */
+@keyframes winnerPulse { 0% { border-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); } 50% { border-color: #ccffcc; box-shadow: 0 0 20px rgba(100, 255, 100, 0.8), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1.015); opacity: 1; filter: grayscale(0%); } 100% { border-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); } } /* Adjusted pulse */
+.player-area.player-wins { animation: winnerPulse 1.5s ease-in-out infinite; border-width: 2px !important; /* Ensure winner border visible */ opacity: 1 !important; filter: grayscale(0%) !important; }
