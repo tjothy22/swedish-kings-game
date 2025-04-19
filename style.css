@@ -1,94 +1,103 @@
 /* Basic body styling */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 10px;
+    padding: 8px; /* Slightly reduced padding */
     background-color: #3a6f3a;
     background-image: radial-gradient(ellipse at center, #5a8f5a 20%, #3a6f3a 100%);
     color: #333;
-    margin: 0; /* Remove default margin */
+    margin: 0;
+    font-size: 0.95em; /* Slightly reduce base font size */
 }
 
 /* Center title area */
-.title-area { text-align: center; margin-bottom: 20px; position: relative; padding-top: 10px;}
-h1 { margin-bottom: 0.2em; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-h2 { text-align: center; margin-top: 0.5em; margin-bottom: 0.5em; color: #444; }
-h3 { text-align: center; margin-top: 0.5em; margin-bottom: 0.5em; color: #555; font-size: 0.9em; text-transform: uppercase; }
+.title-area { text-align: center; margin-bottom: 15px; position: relative; padding-top: 8px;} /* Reduced margins */
+h1 { margin-bottom: 0.2em; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); font-size: 1.8em; } /* Reduced font size */
+h2 { text-align: center; margin-top: 0.4em; margin-bottom: 0.4em; color: #444; font-size: 1.1em;} /* Reduced font size */
+h3 { text-align: center; margin-top: 0.4em; margin-bottom: 0.4em; color: #555; font-size: 0.8em; text-transform: uppercase; } /* Reduced font size */
 
 /* Page Container Styles */
 .page-container {
-    max-width: 1200px; /* Limit width */
+    max-width: 1000px; /* *** REDUCED max-width from 1200px *** */
     margin: 0 auto; /* Center content */
-    padding: 15px;
-    background-color: rgba(255, 255, 255, 0.05); /* Very subtle background */
-    border-radius: 10px;
+    padding: 10px; /* Reduced padding */
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px; /* Slightly smaller radius */
 }
 
 /* Rules Page Specific Styles */
-#rules-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 20px; }
+#rules-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 15px; }
 .rules-content {
-    background-color: rgba(255, 255, 255, 0.8); /* Lighter background for readability */
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #333; /* Darker text for rules */
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 15px; /* Reduced padding */
+    border-radius: 6px;
+    margin-bottom: 15px;
+    color: #333;
     text-align: left;
+    font-size: 0.95em; /* Slightly smaller rules text */
 }
 .rules-content h3 {
-    color: #3a6f3a; /* Green heading */
+    color: #3a6f3a;
     border-bottom: 2px solid #3a6f3a;
-    padding-bottom: 5px;
-    margin-top: 15px;
-    margin-bottom: 10px;
+    padding-bottom: 4px;
+    margin-top: 12px;
+    margin-bottom: 8px;
     text-align: left;
 }
 .rules-content ul, .rules-content ol {
-    margin-left: 20px;
-    line-height: 1.6;
+    margin-left: 18px;
+    line-height: 1.5; /* Slightly tighter line spacing */
 }
-.rules-content ul li { margin-bottom: 5px; }
-.rules-content strong { color: #c82333; } /* Highlight keywords */
-
+.rules-content ul li { margin-bottom: 4px; }
+.rules-content strong { color: #c82333; }
 
 /* Button Styles */
 #new-game-button,
 #export-logs-button,
 #player-actions button,
-.nav-button { /* Added .nav-button class */
-    padding: 10px 20px; font-size: 1em; font-weight: bold; margin: 5px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 3px; cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
+.nav-button {
+    padding: 8px 16px; /* Reduced padding */
+    font-size: 0.9em; /* Reduced font size */
+    font-weight: bold; margin: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 2px; /* Thinner border */ cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
 }
 #player-actions button { background-color: #4CAF50; background-image: linear-gradient(to bottom, #5cb85c, #449d44); border-color: #398439; }
 #new-game-button { background-color: #dc3545; background-image: linear-gradient(to bottom, #d9534f, #c9302c); border-color: #ac2925; }
-#export-logs-button { background-color: #17a2b8; background-image: linear-gradient(to bottom, #5bc0de, #31b0d5); border-color: #2a96b1; display: block; margin: 15px auto; }
-/* Navigation Button Styles */
-.nav-button { /* Start Game / Show Rules */
+#export-logs-button { background-color: #17a2b8; background-image: linear-gradient(to bottom, #5bc0de, #31b0d5); border-color: #2a96b1; display: block; margin: 12px auto; }
+.nav-button {
     background-color: #007bff;
     background-image: linear-gradient(to bottom, #269abc, #007bff);
     border-color: #0056b3;
-    display: inline-block; /* Allow side-by-side */
-    margin: 10px 5px;
+    display: inline-block;
+    margin: 8px 4px;
 }
-#start-game-button { display: block; width: 150px; margin: 20px auto 0 auto; } /* Center Start Game */
+#start-game-button { display: block; width: 140px; margin: 15px auto 0 auto; }
 
 /* Button Hover States */
-#player-actions button:hover:not(:disabled) { background-color: #5cb85c; background-image: linear-gradient(to bottom, #67c167, #4cae4c); box-shadow: 0 3px 7px rgba(0,0,0,0.3); top: -1px; }
-#new-game-button:hover:not(:disabled) { background-color: #d9534f; background-image: linear-gradient(to bottom, #e06763, #d43f3a); box-shadow: 0 3px 7px rgba(0,0,0,0.3); top: -1px; }
-#export-logs-button:hover:not(:disabled) { background-color: #5bc0de; background-image: linear-gradient(to bottom, #6fcae6, #39b3d7); box-shadow: 0 3px 7px rgba(0,0,0,0.3); top: -1px; }
-.nav-button:hover:not(:disabled) { background-color: #269abc; background-image: linear-gradient(to bottom, #31b0d5, #269abc); box-shadow: 0 3px 7px rgba(0,0,0,0.3); top: -1px; }
+#player-actions button:hover:not(:disabled) { background-color: #5cb85c; background-image: linear-gradient(to bottom, #67c167, #4cae4c); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
+#new-game-button:hover:not(:disabled) { background-color: #d9534f; background-image: linear-gradient(to bottom, #e06763, #d43f3a); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
+#export-logs-button:hover:not(:disabled) { background-color: #5bc0de; background-image: linear-gradient(to bottom, #6fcae6, #39b3d7); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
+.nav-button:hover:not(:disabled) { background-color: #269abc; background-image: linear-gradient(to bottom, #31b0d5, #269abc); box-shadow: 0 2px 5px rgba(0,0,0,0.3); top: -1px; }
 
 /* Button Active (Pressed) States */
 #new-game-button:active:not(:disabled),
 #export-logs-button:active:not(:disabled),
 #player-actions button:active:not(:disabled),
-.nav-button:active:not(:disabled) { top: 1px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); border-bottom-width: 2px; }
+.nav-button:active:not(:disabled) { top: 1px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); border-bottom-width: 1px; } /* Adjusted active state */
 
 /* Disabled Button State */
 #player-actions button:disabled { background-color: #ccc; background-image: none; border-color: #bbb; color: #999; cursor: not-allowed; box-shadow: none; text-shadow: none; }
 
 /* Game Page Specific Styles */
-.game-nav-buttons { text-align: center; margin-bottom: 15px; } /* Container for New Game / Show Rules */
+.game-nav-buttons { text-align: center; margin-bottom: 10px; }
 
 /* Game board grid layout */
-#game-board { display: grid; grid-template-columns: 1fr 2.5fr 1fr; grid-template-rows: auto auto; gap: 15px; align-items: start; margin-bottom: 20px; }
+#game-board {
+    display: grid;
+    grid-template-columns: 1fr 2.2fr 1fr; /* Adjusted middle column proportion */
+    grid-template-rows: auto auto;
+    gap: 10px; /* *** REDUCED gap *** */
+    align-items: start;
+    margin-bottom: 15px;
+}
 #computer-1 { grid-column: 1; grid-row: 1; }
 #play-area { grid-column: 2; grid-row: 1; text-align: center;}
 #computer-2 { grid-column: 3; grid-row: 1; }
@@ -96,125 +105,106 @@ h3 { text-align: center; margin-top: 0.5em; margin-bottom: 0.5em; color: #555; f
 
 /* Styling for each player's area */
 .player-area {
-    border: 2px solid #ccc; padding: 15px; min-height: 150px; background-color: rgba(255, 255, 255, 0.1); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 0 10px rgba(0,0,0,0.1);
-    /* Added opacity and filter to transition */
+    border: 2px solid #ccc; padding: 10px; /* *** REDUCED padding *** */
+    min-height: 130px; /* *** REDUCED min-height *** */
+    background-color: rgba(255, 255, 255, 0.1); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1), inset 0 0 8px rgba(0,0,0,0.1); /* Adjusted shadow */
     transition: border-color 0.4s ease-in-out, box-shadow 0.4s ease-in-out, opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
 }
 .player-area.current-player {
     border-color: #ffc107;
-    box-shadow: 0 0 15px rgba(255, 193, 7, 0.6), inset 0 0 10px rgba(0,0,0,0.1);
-    opacity: 1; /* Ensure current player is fully opaque */
-    filter: grayscale(0%); /* Ensure current player is not grayscale */
+    box-shadow: 0 0 12px rgba(255, 193, 7, 0.5), inset 0 0 8px rgba(0,0,0,0.1); /* Adjusted shadow */
 }
-.player-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); }
+.player-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1em; margin-bottom: 5px; } /* Reduced H2 size */
 
-/* --- NEW: Style for passed players --- */
+/* Style for passed players */
 .player-area.player-passed {
-    opacity: 0.6; /* Make it semi-transparent */
-    filter: grayscale(50%); /* Slightly desaturate */
-    border-color: #888; /* Dim the border */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 0 5px rgba(0,0,0,0.1); /* Reduce shadow */
+    opacity: 0.6; filter: grayscale(50%); border-color: #888;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 0 5px rgba(0,0,0,0.1);
 }
-/* Ensure passed state overrides current player border but not winner */
-.player-area.player-passed:not(.player-wins) {
-     border-color: #888;
-}
+.player-area.player-passed:not(.player-wins) { border-color: #888; }
 .player-area.current-player.player-passed:not(.player-wins) {
-     border-color: #aaa; /* A slightly brighter grey if current player passes */
-     box-shadow: 0 0 8px rgba(170, 170, 170, 0.4), inset 0 0 5px rgba(0,0,0,0.1);
+     border-color: #aaa; box-shadow: 0 0 6px rgba(170, 170, 170, 0.4), inset 0 0 5px rgba(0,0,0,0.1);
 }
 
 /* Player Info Container */
-.player-info { text-align: center; margin-bottom: 10px; font-size: 0.95em; color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
-.card-count { font-weight: bold; margin-right: 10px; }
+.player-info { text-align: center; margin-bottom: 8px; font-size: 0.9em; color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); } /* Reduced font size */
+.card-count { font-weight: bold; margin-right: 8px; }
 
 /* General styling for hand display areas */
-.hand { display: flex; flex-wrap: wrap; justify-content: center; min-height: 40px; gap: 5px; padding-top: 5px; padding-bottom: 5px; }
-#p1-hand { }
-.hand-group-container { margin-bottom: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; }
-.hand-group-container label { display: block; text-align: left; font-size: 0.9em; color: #ddd; margin-bottom: 3px; margin-left: 5px; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
-.hand-group { min-height: 65px; background-color: rgba(0,0,0,0.1); border-radius: 4px; padding: 5px; }
+.hand { display: flex; flex-wrap: wrap; justify-content: center; min-height: 30px; /* Reduced height */ gap: 3px; /* *** REDUCED gap *** */ padding-top: 3px; padding-bottom: 3px; }
+.hand-group-container { margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 4px; }
+.hand-group-container label { display: block; text-align: left; font-size: 0.85em; color: #ddd; margin-bottom: 2px; margin-left: 4px; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
+.hand-group { min-height: 55px; /* *** REDUCED min-height *** */ background-color: rgba(0,0,0,0.1); border-radius: 3px; padding: 4px; }
 
 /* Styling for individual cards */
 .card {
-    border: 1px solid black; padding: 10px 5px; min-width: 45px; min-height: 65px; text-align: center; background-color: white; border-radius: 4px; cursor: pointer; user-select: none; display: inline-flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; box-sizing: border-box; box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    transition: transform 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Smoother transition */
+    border: 1px solid black; padding: 8px 4px; /* *** REDUCED padding *** */
+    min-width: 40px; /* *** REDUCED min-width *** */
+    min-height: 60px; /* *** REDUCED min-height *** */
+    text-align: center; background-color: white; border-radius: 3px; /* Slightly smaller radius */ cursor: pointer; user-select: none; display: inline-flex; justify-content: center; align-items: center;
+    font-size: 12px; /* *** REDUCED font-size *** */
+    font-weight: bold; box-sizing: border-box; box-shadow: 1px 1px 1px rgba(0,0,0,0.2); /* Reduced shadow */
+    transition: transform 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     position: relative;
 }
 .card.selected {
     border-color: #ffc107;
-    border-width: 3px;
-    transform: translateY(-5px) scale(1.03); /* Lift and slightly enlarge */
-    box-shadow: 3px 6px 8px rgba(255, 193, 7, 0.5); /* Enhanced shadow */
+    border-width: 2px; /* Thinner selected border */
+    transform: translateY(-3px) scale(1.02); /* Slightly less lift */
+    box-shadow: 2px 4px 5px rgba(255, 193, 7, 0.4); /* Adjusted shadow */
 }
-.card-back { background-color: #6c757d; background-image: linear-gradient(135deg, #6c757d 25%, #495057 25%, #495057 50%, #6c757d 50%, #6c757d 75%, #495057 75%, #495057 100%); background-size: 40px 40px; color: transparent; border: 1px solid #343a40; cursor: default; }
+.card-back { background-color: #6c757d; background-image: linear-gradient(135deg, #6c757d 25%, #495057 25%, #495057 50%, #6c757d 50%, #6c757d 75%, #495057 75%, #495057 100%); background-size: 30px 30px; /* Smaller pattern */ color: transparent; border: 1px solid #343a40; cursor: default; }
 
 /* Styling for the central play area sections */
-#play-area { background-color: rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px; }
-#play-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); }
-#play-area h3 { font-size: 1em; color: #eee; margin-bottom: 3px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
-#play-log-area { margin-bottom: 15px; text-align: left; max-height: 150px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); background-color: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; }
-#play-log .log-entry { font-size: 0.9em; margin-bottom: 3px; padding-bottom: 3px; border-bottom: 1px dotted #ccc; color: #333; }
+#play-area { background-color: rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 8px; }
+#play-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1.1em; }
+#play-area h3 { font-size: 0.9em; color: #eee; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
+#play-log-area { margin-bottom: 10px; text-align: left; max-height: 120px; /* Reduced height */ overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); background-color: rgba(255,255,255,0.7); padding: 4px; border-radius: 3px; }
+#play-log .log-entry { font-size: 0.85em; margin-bottom: 2px; padding-bottom: 2px; border-bottom: 1px dotted #ccc; color: #333; }
 #play-log .log-entry:last-child { border-bottom: none; margin-bottom: 0; }
-#play-log .log-event-round-end { font-weight: bold; color: #155724; background-color: #d4edda; padding: 3px; border-radius: 3px; border-bottom-style: solid; text-align: center; }
+#play-log .log-event-round-end { font-weight: bold; color: #155724; background-color: #d4edda; padding: 2px; border-radius: 2px; border-bottom-style: solid; text-align: center; }
 #play-log .log-event-pass { color: #555; font-style: italic; text-align: center; border-bottom-style: dashed; }
-#last-played-area { margin-top: 10px; }
-#last-played { min-height: 70px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; padding: 10px; border: 1px dashed #aaa; border-radius: 4px; background-color: rgba(255,255,255,0.7); }
+#last-played-area { margin-top: 8px; }
+#last-played { min-height: 65px; /* Reduced height */ display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; /* Reduced gap */ padding: 8px; border: 1px dashed #aaa; border-radius: 3px; background-color: rgba(255,255,255,0.7); }
 #last-played .card {
-    cursor: default;
-    box-shadow: none;
-    animation: cardPlayedAnimation 0.5s ease-out forwards; /* Animation for played cards */
+    cursor: default; box-shadow: none;
+    animation: cardPlayedAnimation 0.5s ease-out forwards;
 }
-#play-area > p { margin-bottom: 15px; font-weight: bold; font-size: 1.1em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); }
+#play-area > p { margin-bottom: 10px; font-weight: bold; font-size: 1em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); } /* Status message */
+
+/* *** NEW STYLE for Last Play Description *** */
+.last-played-text {
+    text-align: center;
+    color: #eee;
+    font-size: 0.9em;
+    font-style: italic;
+    margin-top: 5px; /* Space above text */
+    margin-bottom: 0; /* Reset bottom margin */
+    min-height: 1.2em; /* Prevent layout shift when empty */
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+}
+
 
 /* Styling for the player action buttons area */
-#player-actions { margin-top: 15px; text-align: center; }
+#player-actions { margin-top: 10px; text-align: center; }
 
 /* Styles for Export Controls */
-#export-controls { margin-top: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background-color: rgba(255, 255, 255, 0.1); color: #eee; }
-#export-controls h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
-#export-controls p { color: #ddd; }
-#export-controls textarea { width: 100%; margin-top: 10px; font-family: monospace; box-sizing: border-box; min-height: 150px; background-color: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+#export-controls { margin-top: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; background-color: rgba(255, 255, 255, 0.1); color: #eee; }
+#export-controls h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); font-size: 1.1em; }
+#export-controls p { color: #ddd; font-size: 0.9em; }
+#export-controls textarea { width: 100%; margin-top: 8px; font-family: monospace; box-sizing: border-box; min-height: 100px; /* Reduced height */ background-color: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.85em; }
 
 /* --- Animations --- */
-
-/* Animation for cards appearing in the play area */
 @keyframes cardPlayedAnimation {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  from { opacity: 0; transform: scale(0.8) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
-
-/* Animation for the winning player's area */
 @keyframes winnerPulse {
-  0% {
-    border-color: #00ff00; /* Bright Green */
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.7), inset 0 0 15px rgba(0,0,0,0.1);
-    transform: scale(1);
-    opacity: 1; filter: grayscale(0%); /* Ensure winner is fully visible */
-  }
-  50% {
-    border-color: #ccffcc; /* Lighter Green */
-    box-shadow: 0 0 35px rgba(100, 255, 100, 0.9), inset 0 0 15px rgba(0,0,0,0.1);
-    transform: scale(1.02); /* Slightly larger */
-    opacity: 1; filter: grayscale(0%);
-  }
-  100% {
-    border-color: #00ff00; /* Bright Green */
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.7), inset 0 0 15px rgba(0,0,0,0.1);
-    transform: scale(1);
-    opacity: 1; filter: grayscale(0%);
-  }
+  0% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.6), inset 0 0 12px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); }
+  50% { border-color: #ccffcc; box-shadow: 0 0 25px rgba(100, 255, 100, 0.8), inset 0 0 12px rgba(0,0,0,0.1); transform: scale(1.02); opacity: 1; filter: grayscale(0%); }
+  100% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.6), inset 0 0 12px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); }
 }
-
 .player-area.player-wins {
-  animation: winnerPulse 1.5s ease-in-out infinite; /* Apply the infinite pulse */
-  border-width: 3px;
-  opacity: 1 !important; /* Ensure winner is not faded by passed state */
-  filter: grayscale(0%) !important; /* Ensure winner is not grayed out by passed state */
+  animation: winnerPulse 1.5s ease-in-out infinite; border-width: 3px;
+  opacity: 1 !important; filter: grayscale(0%) !important;
 }
