@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swedish Kings</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="title-area">
+        <h1>Swedish Kings</h1>
+        </div>
+
+    <div id="rules-page" class="page-container" style="display: block;">
+        <h2>How to Play Swedish Kings</h2>
+
+        <div class="rules-content">
+            <h3>Objective</h3>
+            <p>Be the first player to get rid of all your cards.</p>
+
+            <h3>Setup</h3>
+            <ul>
+                <li>Uses a standard 52-card deck plus <strong>two Jokers</strong> (54 cards total).</li>
+                <li>Cards are dealt out as evenly as possible to 3 players (You, Computer 1, Computer 2).</li>
+                <li>The player holding the <strong>4 of Hearts (4♥)</strong> starts the first round.</li>
+            </ul>
+
+            <h3>Card Ranks & Wildcards</h3>
+            <ul>
+                <li>Cards rank from 4 (low) up to Ace (high): <strong>4, 5, 6, 7, 8, 9, 10, J, Q, K, A</strong>.</li>
+                <li><strong>Jokers, 2s, and 3s</strong> are wildcards. They can represent any card rank (4-A) but not a specific suit.</li>
+                <li>When playing wildcards with non-wild cards, the non-wild cards determine the rank of the hand.</li>
+                <li>You cannot play *only* wildcards.</li>
+            </ul>
+
+            <h3>Gameplay</h3>
+            <ol>
+                <li>The starting player must play a hand that includes the 4♥.</li>
+                <li>Subsequent players must play a hand that:
+                    <ul>
+                        <li>Has the <strong>same number of cards OR MORE</strong> than the previous hand played.</li>
+                        <li>Has a <strong>higher rank</strong> than the previous hand played.</li>
+                    </ul>
+                </li>
+                <li>You can play singles, pairs, three-of-a-kind, etc. (e.g., single 5, pair of 8s, three Jacks).</li>
+                <li>Wildcards can be used to complete sets (e.g., 8♥ + Joker counts as two 8s).</li>
+            </ol>
+
+            <h3>Passing & Rounds</h3>
+            <ul>
+                <li>If you cannot or choose not to beat the previous hand, you must **Pass**.</li>
+                <li>Once you pass, you are out for the rest of that specific round sequence.</li>
+                <li>A round sequence ends when all players but one have passed.</li>
+                <li>The last player to successfully play a hand wins the round and starts the next round by playing any card(s) they wish.</li>
+            </ul>
+
+             <h3>Ace Rule</h3>
+            <ul>
+                <li>Playing Aces (any number) is a special move.</li>
+                <li>If you play Aces, you **immediately win the current round**, regardless of previous plays.</li>
+                <li>You then start the next round.</li>
+            </ul>
+
+            <h3>Winning the Game</h3>
+            <ul>
+                <li>The first player to empty their hand wins the game.</li>
+                <li><strong>Important:</strong> Your final play (the one that empties your hand) **cannot** contain any Aces or Wildcards.</li>
+            </ul>
+        </div>
+
+        <button id="start-game-button" class="nav-button">Play Game!</button>
+    </div>
+
+    <div id="game-page" class="page-container" style="display: none;">
+
+        <div class="game-nav-buttons">
+             <button id="new-game-button">New Game</button>
+             <button id="show-rules-button" class="nav-button">Show Rules</button>
+        </div>
+
+        <div id="game-board">
+
+            <div id="computer-1" class="player-area">
+                <h2>Computer 1</h2>
+                <div class="player-info">
+                    <span class="card-count">Cards: <span id="c1-count">0</span></span>
+                    </div>
+                <div class="hand" id="c1-hand"></div>
+            </div>
+
+            <div id="play-area">
+                <h2>Play Area</h2>
+                <p>Status: <span id="status-message">Game loading...</span></p>
+                <div id="play-log-area">
+                    <h3>Round Log:</h3>
+                    <div id="play-log"></div>
+                </div>
+                <div id="last-played-area">
+                    <h3>Last Play:</h3>
+                    <div id="last-played"></div>
+                </div>
+            </div>
+
+            <div id="computer-2" class="player-area">
+                <h2>Computer 2</h2>
+                <div class="player-info">
+                    <span class="card-count">Cards: <span id="c2-count">0</span></span>
+                    </div>
+                <div class="hand" id="c2-hand"></div>
+            </div>
+
+            <div id="human-player" class="player-area">
+                <h2>Your Hand</h2>
+                <div class="player-info">
+                    <span class="card-count">Cards: <span id="p1-count">0</span></span>
+                     </div>
+                <div id="p1-hand">
+                     <div class="hand-group-container"><label>Wilds:</label><div id="p1-hand-wilds" class="hand hand-group"></div></div>
+                     <div class="hand-group-container"><label>Low Cards (4-10):</label><div id="p1-hand-low" class="hand hand-group"></div></div>
+                     <div class="hand-group-container"><label>Royal Cards (J-A):</label><div id="p1-hand-royals" class="hand hand-group"></div></div>
+                </div>
+                <div id="player-actions">
+                     <button id="play-button">Play Selected</button>
+                     <button id="pass-button">Pass</button>
+                </div>
+            </div>
+
+        </div> <div id="export-controls">
+            <h2>Export Game Data</h2>
+            <p>Play one or more games using the "New Game" button. Then click Export to get detailed turn data for all games played in this session.</p>
+            <button id="export-logs-button">Export Game Logs</button>
+            <p>Results (CSV format - Copy and paste into Sheets/Excel):</p>
+            <textarea id="exported-logs-textarea" rows="10" readonly placeholder="Detailed game logs will appear here after clicking Export..."></textarea>
+        </div>
+
+    </div> <script src="game.js"></script>
+</body>
+</html>
