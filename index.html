@@ -76,6 +76,10 @@
         <div class="game-nav-buttons">
              <button id="new-game-button">New Game</button>
              <button id="show-rules-button" class="nav-button">Show Rules</button>
+             <div class="toggle-switch">
+                 <input type="checkbox" id="ai-reasoning-toggle">
+                 <label for="ai-reasoning-toggle">Show AI Reasoning</label>
+             </div>
         </div>
 
         <div id="game-board">
@@ -86,6 +90,9 @@
                     <span class="card-count">Cards: <span id="c1-count">0</span></span>
                 </div>
                 <div class="hand" id="c1-hand"></div>
+                <div class="ai-reasoning" id="c1-reasoning">
+                    <p>Thinking...</p>
+                </div>
             </div>
 
             <div id="play-area">
@@ -109,6 +116,9 @@
                     <span class="card-count">Cards: <span id="c2-count">0</span></span>
                 </div>
                 <div class="hand" id="c2-hand"></div>
+                <div class="ai-reasoning" id="c2-reasoning">
+                    <p>Thinking...</p>
+                </div>
             </div>
 
             <div id="human-player" class="player-area">

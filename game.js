@@ -13,7 +13,8 @@ const QUEEN_VALUE = 12;
 const ROYAL_VALUE_THRESHOLD = 11; // J, Q, K, A
 const WILD_PENALTY = 5;
 const STARTING_ROUND_LOW_WILD_PENALTY = 20;
-const AI_TURN_DELAY = 1000;
+const AI_TURN_DELAY = 1000; // Keep this for turn pacing
+const AI_REASONING_DELAY = 300; // Short delay before showing reasoning
 const ROUND_END_DELAY = AI_TURN_DELAY * 2;
 const STANDARD_ROUND_END_DELAY = AI_TURN_DELAY * 1.5;
 const LOW_CARD_THRESHOLD_P2 = 3;
@@ -39,10 +40,15 @@ const COMPUTER_NAMES = [
     "Thelma", "Ruby", "Agnes", "Sarah", "Viola", "Nellie", "Beatrice", "Julia", "Laura", "Lillie"
 ];
 
+
 // --- Game State ---
 let gameState = {
     deck: [],
-    players: [ { id: 1, name: "You", hand: [] }, { id: 2, name: "Computer 1", hand: [] }, { id: 3, name: "Computer 2", hand: [] } ],
+    players: [
+        { id: 1, name: "You", hand: [] },
+        { id: 2, name: "Computer 1", hand: [], lastReasoning: "" },
+        { id: 3, name: "Computer 2", hand: [], lastReasoning: "" }
+    ],
     currentPlayerIndex: -1, lastPlayedHand: null, passedPlayers: [], isGameOver: false, winner: null, isGameStarted: false, turnCount: 0, playedCards: {} };
 let selectedCards = [];
 
@@ -62,53 +68,136 @@ function sortHand(hand) { hand.sort((a, b) => { const vA = a.value || 0; const v
 function calculateHandRank(hand) { if (!hand || hand.length === 0) return 0; let score = 0; const rankCounts = {}; const basePoints = { A: 10, K: 8, Q: 6, J: 4, '10': 3, '9': 2, '8': 1 }; const wildPoints = { Joker: 5, '2': 4, '3': 4 }; for (const card of hand) { if (card.isWild) { score += wildPoints[card.rank] || 0; } else { score += basePoints[card.rank] || 0; rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1; } } for (const rank in rankCounts) { const count = rankCounts[rank]; const rankValue = RANK_VALUES[rank]; if (count >= 2) { score += (10 + Math.ceil(rankValue / 2)); } if (count >= 3) { score += (15 + rankValue); } if (count >= 4) { score += (15 + Math.ceil(rankValue * 1.5)); } } return score; }
 function calculateAvgScore(hand) { if (!hand || hand.length === 0) return 0; const totalScore = calculateHandRank(hand); return totalScore / hand.length; }
 
-// --- Helper: Get Rank Name (Uppercase Words) --- CORRECTED
+// --- Helper: Get Rank Name (Uppercase Words) ---
 function getRankName(rankValue) {
     switch (rankValue) {
-        case 4: return "FOUR";
-        case 5: return "FIVE";
-        case 6: return "SIX";
-        case 7: return "SEVEN";
-        case 8: return "EIGHT";
-        case 9: return "NINE";
-        case 10: return "TEN";
-        case 11: return "JACK";
-        case 12: return "QUEEN";
-        case 13: return "KING";
-        case 14: return "ACE";
-        default: return "UNKNOWN";
+        case 4: return "FOUR"; case 5: return "FIVE"; case 6: return "SIX";
+        case 7: return "SEVEN"; case 8: return "EIGHT"; case 9: return "NINE";
+        case 10: return "TEN"; case 11: return "JACK"; case 12: return "QUEEN";
+        case 13: return "KING"; case 14: return "ACE"; default: return "UNKNOWN";
     }
+}
+
+// --- Helper: Generate AI Reasoning Text ---
+function generateReasoningText(playStyle, chosenPlay = null, opponentHandSize = null) {
+    let reason = "Thinking...";
+    if (playStyle.startsWith('pass_')) {
+        const reasonCode = playStyle.substring(5);
+        switch (reasonCode) {
+            case 'no_valid': reason = "Passed: No valid plays were available."; break;
+            case 'strategic': reason = "Passed: Decided to save stronger cards for later."; break;
+            case 'confident': reason = "Passed: Had a valid play, but chose to pass while feeling confident."; break;
+            case 'conservative': reason = "Passed: Had a valid play, but chose to pass to be more conservative."; break;
+            case 'falling_behind': reason = "Passed: Could not find a suitable play to catch up."; break;
+            case 'stop_opponent': reason = "Passed: Could not find a play to stop opponent."; break;
+            case 'no_4h_play_chosen': reason = "Passed: Error - Had 4♥ but couldn't select a valid play."; break;
+            case 'invalid_win_forced_pass': reason = "Passed: Intended winning play was invalid (contained Ace/Wild)."; break;
+            case 'internal_error': reason = "Passed: Internal error occurred during decision making."; break; // Added for new guard clause
+            default: reason = "Passed: No suitable play found based on current strategy.";
+        }
+    } else if (chosenPlay) {
+        const rankName = getRankName(chosenPlay.rankValue);
+        const plural = chosenPlay.quantity > 1 ? 'S' : '';
+        const playDesc = `${chosenPlay.quantity}x ${rankName}${plural}`;
+        const wildInfo = chosenPlay.usesWilds ? " (using wildcards)" : "";
+        switch (playStyle) {
+            case 'winning': reason = `Played ${playDesc}${wildInfo} to win the game!`; break;
+            case 'penultimate': reason = `Played ${playDesc}${wildInfo} to set up a potential win next turn.`; break;
+            case 'penultimate_lower_rank': reason = `Played lower rank ${playDesc}${wildInfo} to set up a potential win next turn.`; break;
+            case 'stop_opponent': reason = `Played ${playDesc}${wildInfo} aggressively as an opponent has few cards (${opponentHandSize}).`; break;
+            case 'falling_behind_with_wilds':
+            case 'falling_behind_no_wilds': reason = `Played ${playDesc}${wildInfo} trying to reduce hand size (currently falling behind).`; break;
+            case 'confident_with_wilds':
+            case 'confident_no_wilds': reason = `Played ${playDesc}${wildInfo} conservatively while ahead or level.`; break;
+            case 'conservative_with_wilds':
+            case 'conservative_no_wilds': reason = `Played ${playDesc}${wildInfo} cautiously, trying to save stronger cards.`; break;
+             case 'conservative_rank_plus_3': reason = `Played ${playDesc}${wildInfo} as a safe, non-royal, non-wild +3 rank play.`; break;
+            case 'confident_ace_start_swap_no_wild':
+            case 'conservative_ace_start_swap_no_wild': reason = `Played ${playDesc}${wildInfo} instead of lowest single to avoid using it when starting with an Ace.`; break;
+            case 'start_4h': reason = `Played ${playDesc}${wildInfo} to start the game (must include 4♥).`; break;
+            default: reason = `Played ${playDesc}${wildInfo}. Strategy: ${playStyle}.`;
+        }
+    }
+    return reason;
 }
 
 // --- Rendering Functions ---
 function renderCard(card) { const cE = document.createElement('div'); cE.classList.add('card'); cE.dataset.cardId = card.id; cE.textContent = card.display; cE.style.color = (card.suit === 'hearts' || card.suit === 'diamonds') ? 'red' : 'black'; if (card.rank === 'Joker') cE.style.fontWeight = 'bold'; return cE; }
-function renderHands(players) { const isGameOver = gameState.isGameOver; const passedPlayerIndices = gameState.passedPlayers; players.forEach((player, index) => { const isHuman = index === 0; let handElement; let countElementId; let playerAreaElement = document.getElementById(PLAYER_AREA_IDS[index]); let playerNameElement = playerAreaElement?.querySelector('h2'); if (playerNameElement && player.name) { playerNameElement.textContent = player.name; } if (isHuman) { const wildsContainer = document.getElementById('p1-hand-wilds'); const lowContainer = document.getElementById('p1-hand-low'); const royalsContainer = document.getElementById('p1-hand-royals'); const countElement = document.getElementById('p1-count'); if (!wildsContainer || !lowContainer || !royalsContainer || !countElement) { console.error("HTML elements for grouped hand or card count not found for human player."); return; } wildsContainer.innerHTML = ''; lowContainer.innerHTML = ''; royalsContainer.innerHTML = ''; sortHand(player.hand); player.hand.forEach(card => { const cardEl = renderCard(card); const isSelected = selectedCards.some(selectedCard => selectedCard.id === card.id); if (!isGameOver && !passedPlayerIndices.includes(index)) { cardEl.addEventListener('click', handleCardClick); if (isSelected) { cardEl.classList.add('selected'); } } else { cardEl.style.cursor = 'default'; if (isSelected) { cardEl.classList.add('selected'); } } if (card.isWild) { wildsContainer.appendChild(cardEl); } else if (card.value < ROYAL_VALUE_THRESHOLD) { lowContainer.appendChild(cardEl); } else { royalsContainer.appendChild(cardEl); } }); countElement.textContent = player.hand.length; } else { if (index === 1) { handElementId = 'c1-hand'; countElementId = 'c1-count'; } else { handElementId = 'c2-hand'; countElementId = 'c2-count'; } handElement = document.getElementById(handElementId); const countElement = document.getElementById(countElementId); if (!handElement || !countElement) { console.error(`HTML elements (hand/count) not found for player index ${index}`); return; } handElement.innerHTML = ''; if (isGameOver && player.hand.length > 0) { sortHand(player.hand); player.hand.forEach(card => { const cardEl = renderCard(card); cardEl.style.cursor = 'default'; handElement.appendChild(cardEl); }); } else if (!isGameOver) { player.hand.forEach(_ => { const cardEl=document.createElement('div'); cardEl.classList.add('card','card-back'); handElement.appendChild(cardEl); }); } countElement.textContent = player.hand.length; } if (playerAreaElement) { if (isGameOver && gameState.winner === index) { playerAreaElement.classList.add('player-wins'); } else { playerAreaElement.classList.remove('player-wins'); } if (!isGameOver && passedPlayerIndices.includes(index)) { playerAreaElement.classList.add('player-passed'); } else { playerAreaElement.classList.remove('player-passed'); } } else { console.warn(`Player area element ${PLAYER_AREA_IDS[index]} not found for visual state update.`); } }); updatePlayerHighlight(gameState.currentPlayerIndex); }
-// --- Updated renderPlayArea --- CORRECTED
+function renderHands(players) {
+    const isGameOver = gameState.isGameOver;
+    const passedPlayerIndices = gameState.passedPlayers;
+    players.forEach((player, index) => {
+        const isHuman = index === 0;
+        let handElement, countElementId, playerAreaElement, reasoningElement;
+        playerAreaElement = document.getElementById(PLAYER_AREA_IDS[index]);
+        let playerNameElement = playerAreaElement?.querySelector('h2');
+        if (playerNameElement && player.name) { playerNameElement.textContent = player.name; }
+        if (isHuman) {
+             const wildsContainer = document.getElementById('p1-hand-wilds');
+             const lowContainer = document.getElementById('p1-hand-low');
+             const royalsContainer = document.getElementById('p1-hand-royals');
+             const countElement = document.getElementById('p1-count');
+             if (!wildsContainer || !lowContainer || !royalsContainer || !countElement) { console.error("HTML elements for grouped hand or card count not found for human player."); return; }
+             wildsContainer.innerHTML = ''; lowContainer.innerHTML = ''; royalsContainer.innerHTML = '';
+             sortHand(player.hand);
+             player.hand.forEach(card => {
+                 const cardEl = renderCard(card);
+                 const isSelected = selectedCards.some(selectedCard => selectedCard.id === card.id);
+                 if (!isGameOver && !passedPlayerIndices.includes(index)) {
+                     cardEl.addEventListener('click', handleCardClick);
+                     if (isSelected) { cardEl.classList.add('selected'); }
+                 } else {
+                     cardEl.style.cursor = 'default';
+                     if (isSelected) { cardEl.classList.add('selected'); } // Keep selected visible even if game over
+                 }
+                 if (card.isWild) { wildsContainer.appendChild(cardEl); }
+                 else if (card.value < ROYAL_VALUE_THRESHOLD) { lowContainer.appendChild(cardEl); }
+                 else { royalsContainer.appendChild(cardEl); }
+             });
+             countElement.textContent = player.hand.length;
+        } else { // Computer Players
+            if (index === 1) { handElementId = 'c1-hand'; countElementId = 'c1-count'; reasoningElement = document.getElementById('c1-reasoning'); }
+            else { handElementId = 'c2-hand'; countElementId = 'c2-count'; reasoningElement = document.getElementById('c2-reasoning'); }
+            handElement = document.getElementById(handElementId);
+            const countElement = document.getElementById(countElementId);
+            if (!handElement || !countElement || !reasoningElement) { console.error(`HTML elements (hand/count/reasoning) not found for player index ${index}`); return; }
+            handElement.innerHTML = '';
+            if (isGameOver && player.hand.length > 0) {
+                sortHand(player.hand);
+                player.hand.forEach(card => { const cardEl = renderCard(card); cardEl.style.cursor = 'default'; handElement.appendChild(cardEl); });
+            } else if (!isGameOver) {
+                player.hand.forEach(_ => { const cardEl = document.createElement('div'); cardEl.classList.add('card', 'card-back'); handElement.appendChild(cardEl); });
+            }
+            countElement.textContent = player.hand.length;
+            const reasoningParagraph = reasoningElement.querySelector('p');
+            if (reasoningParagraph) {
+                 let reasonText = player.lastReasoning || "Waiting...";
+                 if (gameState.currentPlayerIndex === index && !isGameOver && !passedPlayerIndices.includes(index) && !player.lastReasoning) {
+                    reasonText = "Thinking...";
+                 }
+                reasoningParagraph.textContent = reasonText;
+            } else { console.error(`Reasoning paragraph not found within ${reasoningElement.id}`); }
+        }
+        if (playerAreaElement) {
+            if (isGameOver && gameState.winner === index) { playerAreaElement.classList.add('player-wins'); } else { playerAreaElement.classList.remove('player-wins'); }
+            if (!isGameOver && passedPlayerIndices.includes(index)) { playerAreaElement.classList.add('player-passed'); } else { playerAreaElement.classList.remove('player-passed'); }
+        } else { console.warn(`Player area element ${PLAYER_AREA_IDS[index]} not found for visual state update.`); }
+    });
+    updatePlayerHighlight(gameState.currentPlayerIndex);
+}
 function renderPlayArea(playedHand) {
     const playAreaElement = document.getElementById('last-played');
     const descriptionElement = document.getElementById('last-played-description');
-    if (!playAreaElement || !descriptionElement) {
-        console.error("Play area element ('last-played' or 'last-played-description') not found.");
-        return;
-    }
+    if (!playAreaElement || !descriptionElement) { console.error("Play area element ('last-played' or 'last-played-description') not found."); return; }
     playAreaElement.innerHTML = '';
-    descriptionElement.textContent = ''; // Clear previous description
-
+    descriptionElement.textContent = '';
     if (playedHand && playedHand.cards && playedHand.cards.length > 0) {
-        sortHand(playedHand.cards); // Sort cards for consistent display if needed
-        playedHand.cards.forEach(c => {
-            const cardElement = renderCard(c);
-            cardElement.style.cursor = 'default'; // Make cards in play area not clickable
-            playAreaElement.appendChild(cardElement);
-        });
-
-        // Generate description text
+        sortHand(playedHand.cards);
+        playedHand.cards.forEach(c => { const cardElement = renderCard(c); cardElement.style.cursor = 'default'; playAreaElement.appendChild(cardElement); });
         const quantity = playedHand.quantity;
         const rankValue = playedHand.rankValue;
-        const rankName = getRankName(rankValue); // Use the corrected function
-        const plural = quantity > 1 ? 'S' : ''; // Add 'S' if quantity is greater than 1
-
-        // Set the text content in the format: Qty x RANK(S)
+        const rankName = getRankName(rankValue);
+        const plural = quantity > 1 ? 'S' : '';
         descriptionElement.textContent = `${quantity}x ${rankName}${plural}`;
     }
 }
@@ -140,44 +229,61 @@ function countDistinctNonWildRanks(hand) { const ranks = new Set(); hand.forEach
 function getNonWildCardsByRank(hand) { return hand.filter(c => !c.isWild).reduce((acc, c) => { if (!acc[c.rank]) acc[c.rank] = []; acc[c.rank].push(c); return acc; }, {}); }
 function findHighestNonWildCardId(hand) { let highestValue = -1; let highestId = null; hand.forEach(card => { if (!card.isWild && card.value > highestValue) { highestValue = card.value; highestId = card.id; } }); return highestId; }
 function findLowestNonWildCardId(hand) { let lowestValue = Infinity; let lowestId = null; hand.forEach(card => { if (!card.isWild && card.value < lowestValue) { lowestValue = card.value; lowestId = card.id; } }); return lowestId; }
-function filterAndSortLowestP5P6(candidates, rankLimit, royalLimit, avoidHighestId, lowestCardIdInHand, lastRankValue) {
-    if (!candidates || candidates.length === 0) return [];
-    const lowestCardPlays = candidates.filter(play =>
-        lowestCardIdInHand !== null && play.cards.some(c => c.id === lowestCardIdInHand)
-    );
-    const lowestCardPlayIds = new Set(lowestCardPlays.map(p => p.cards.map(c => c.id).sort().join()));
-    const filteredStandardPlays = candidates.filter(play => {
-        const playId = play.cards.map(c => c.id).sort().join();
-        if (lowestCardPlayIds.has(playId)) { return false; }
-        const rankCheck = lastRankValue === -1 || play.rankValue <= lastRankValue + rankLimit;
-        const highestCheck = avoidHighestId === null || !play.cards.some(c => c.id === avoidHighestId);
-        const royalCheck = !(lastRankValue >= QUEEN_VALUE && play.rankValue > lastRankValue + royalLimit);
-        return rankCheck && highestCheck && royalCheck;
-    });
-    const combinedCandidates = [...lowestCardPlays, ...filteredStandardPlays];
-    if (combinedCandidates.length > 0) {
-        combinedCandidates.sort((a, b) => {
-            if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue;
-            const wildsA = a.cards.filter(c => c.isWild).length;
-            const wildsB = b.cards.filter(c => c.isWild).length;
-            if (wildsA !== wildsB) return wildsA - wildsB;
-            return b.quantity - a.quantity;
-        });
-        return combinedCandidates;
-    }
-    return [];
-}
+function filterAndSortLowestP5P6(candidates, rankLimit, royalLimit, avoidHighestId, lowestCardIdInHand, lastRankValue) { if (!candidates || candidates.length === 0) return []; const lowestCardPlays = candidates.filter(play => lowestCardIdInHand !== null && play.cards.some(c => c.id === lowestCardIdInHand)); const lowestCardPlayIds = new Set(lowestCardPlays.map(p => p.cards.map(c => c.id).sort().join())); const filteredStandardPlays = candidates.filter(play => { const playId = play.cards.map(c => c.id).sort().join(); if (lowestCardPlayIds.has(playId)) { return false; } const rankCheck = lastRankValue === -1 || play.rankValue <= lastRankValue + rankLimit; const highestCheck = avoidHighestId === null || !play.cards.some(c => c.id === avoidHighestId); const royalCheck = !(lastRankValue >= QUEEN_VALUE && play.rankValue > lastRankValue + royalLimit); return rankCheck && highestCheck && royalCheck; }); const combinedCandidates = [...lowestCardPlays, ...filteredStandardPlays]; if (combinedCandidates.length > 0) { combinedCandidates.sort((a, b) => { if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue; const wildsA = a.cards.filter(c => c.isWild).length; const wildsB = b.cards.filter(c => c.isWild).length; if (wildsA !== wildsB) return wildsA - wildsB; return b.quantity - a.quantity; }); return combinedCandidates; } return []; }
+
+// --- chooseBestPlay Function - ADDED GUARD CLAUSE ---
 function chooseBestPlay(validPlays, playerIndex) {
     if (!validPlays || validPlays.length === 0) { console.log(`AI-${playerIndex}: No valid plays possible.`); return { chosenPlay: null, playStyle: 'pass_no_valid' }; }
-    const aiPlayer = gameState.players[playerIndex]; const aiHand = aiPlayer.hand; const lastPlayedHand = gameState.lastPlayedHand; const lastRankValue = lastPlayedHand?.rankValue ?? -1; const aiHandLength = aiHand.length; let playStyle = 'default';
+
+    const aiPlayer = gameState.players[playerIndex];
+    // --- ADDED GUARD CLAUSE for aiHand ---
+    if (!aiPlayer || !aiPlayer.hand) {
+        console.error(`AI-${playerIndex}: Error - AI player or hand is undefined in chooseBestPlay.`);
+        return { chosenPlay: null, playStyle: 'pass_internal_error' };
+    }
+    const aiHand = aiPlayer.hand;
+    // --- End Guard Clause ---
+
+    const lastPlayedHand = gameState.lastPlayedHand;
+    const lastRankValue = lastPlayedHand?.rankValue ?? -1;
+    const aiHandLength = aiHand.length;
+    let playStyle = 'default';
+
+    // P1: Winning Play
     const winningPlays = validPlays.filter(play => play.quantity === aiHandLength && !play.cards.some(c => c.value === ACE_VALUE || c.isWild));
     if (winningPlays.length > 0) { playStyle = 'winning'; console.log(`AI-${playerIndex}: Priority 1 (${playStyle}): Found valid winning play!`); sortHand(winningPlays[0].cards); return { chosenPlay: winningPlays[0], playStyle: playStyle }; }
+
+    // Calculate opponent stats
     let minOpponentHandSize = Infinity; let leadingPlayerHandSize = Infinity; let totalOpponentCards = 0; let opponentCount = 0; let opponentAvgScores = [];
     gameState.players.forEach((player, index) => { if (index !== playerIndex) { opponentCount++; const oppHandLength = player.hand.length; totalOpponentCards += oppHandLength; minOpponentHandSize = Math.min(minOpponentHandSize, oppHandLength); leadingPlayerHandSize = Math.min(leadingPlayerHandSize, oppHandLength); opponentAvgScores.push(calculateAvgScore(player.hand)); } });
-    const myAvgScore = calculateAvgScore(aiHand); const tableAvgScore = opponentCount > 0 ? opponentAvgScores.reduce((a, b) => a + b, 0) / opponentCount : 0;
-    const nonWildCardsByRank = getNonWildCardsByRank(aiHand); const distinctRankCount = Object.keys(nonWildCardsByRank).length;
-    if (distinctRankCount === 2) { playStyle = 'penultimate'; console.log(`AI-${playerIndex}: Priority 3 (${playStyle}): Found 2 distinct non-wild ranks.`); const ranks = Object.keys(nonWildCardsByRank); const rankValue1 = RANK_VALUES[ranks[0]]; const rankValue2 = RANK_VALUES[ranks[1]]; const higherRank = rankValue1 > rankValue2 ? ranks[0] : ranks[1]; const lowerRank = rankValue1 < rankValue2 ? ranks[0] : ranks[1]; const higherRankCards = nonWildCardsByRank[higherRank]; const lowerRankCards = nonWildCardsByRank[lowerRank]; const wildCards = aiHand.filter(c => c.isWild); const playAttemptHigher = { cards: [...higherRankCards, ...wildCards], rankValue: RANK_VALUES[higherRank], quantity: higherRankCards.length + wildCards.length, usesWilds: wildCards.length > 0 }; if (isPlayValidVsLast(playAttemptHigher, lastPlayedHand)) { console.log(`AI-${playerIndex}: (${playStyle}) Constructed play (higher rank + wilds) is valid.`); sortHand(playAttemptHigher.cards); return { chosenPlay: playAttemptHigher, playStyle: playStyle }; } const playAttemptLower = { cards: [...lowerRankCards, ...wildCards], rankValue: RANK_VALUES[lowerRank], quantity: lowerRankCards.length + wildCards.length, usesWilds: wildCards.length > 0 }; if (isPlayValidVsLast(playAttemptLower, lastPlayedHand)) { console.log(`AI-${playerIndex}: (${playStyle}) Constructed play (lower rank + wilds) is valid.`); sortHand(playAttemptLower.cards); return { chosenPlay: playAttemptLower, playStyle: `${playStyle}_lower_rank` }; } console.log(`AI-${playerIndex}: (${playStyle}) Neither constructed penultimate play was valid.`); }
-    if (minOpponentHandSize <= LOW_CARD_THRESHOLD_P2) { playStyle = 'stop_opponent'; console.log(`AI-${playerIndex}: Priority 2 (${playStyle}): Opponent has <= ${LOW_CARD_THRESHOLD_P2} cards. Playing highest score.`); let P2Candidates = [...validPlays]; P2Candidates.sort((a, b) => { let scoreA = a.rankValue - (a.usesWilds ? WILD_PENALTY : 0); let scoreB = b.rankValue - (b.usesWilds ? WILD_PENALTY : 0); if (scoreA !== scoreB) return scoreB - scoreA; if (a.quantity !== b.quantity) return b.quantity - a.quantity; return b.rankValue - a.rankValue; }); if (P2Candidates.length > 0) { sortHand(P2Candidates[0].cards); return { chosenPlay: P2Candidates[0], playStyle: playStyle }; } console.log(`AI-${playerIndex}: (${playStyle}) No valid plays found.`); return { chosenPlay: null, playStyle: `pass_${playStyle}` }; }
+    const myAvgScore = calculateAvgScore(aiHand);
+    const tableAvgScore = opponentCount > 0 ? opponentAvgScores.reduce((a, b) => a + b, 0) / opponentCount : 0;
+
+    // P3: Penultimate Play Setup
+    const nonWildCardsByRank = getNonWildCardsByRank(aiHand);
+    const distinctRankCount = Object.keys(nonWildCardsByRank).length;
+    if (distinctRankCount === 2) {
+        playStyle = 'penultimate'; console.log(`AI-${playerIndex}: Priority 3 (${playStyle}): Found 2 distinct non-wild ranks.`);
+        const ranks = Object.keys(nonWildCardsByRank); const rankValue1 = RANK_VALUES[ranks[0]]; const rankValue2 = RANK_VALUES[ranks[1]];
+        const higherRank = rankValue1 > rankValue2 ? ranks[0] : ranks[1]; const lowerRank = rankValue1 < rankValue2 ? ranks[0] : ranks[1];
+        const higherRankCards = nonWildCardsByRank[higherRank]; const lowerRankCards = nonWildCardsByRank[lowerRank]; const wildCards = aiHand.filter(c => c.isWild);
+        const playAttemptHigher = { cards: [...higherRankCards, ...wildCards], rankValue: RANK_VALUES[higherRank], quantity: higherRankCards.length + wildCards.length, usesWilds: wildCards.length > 0 };
+        if (isPlayValidVsLast(playAttemptHigher, lastPlayedHand)) { console.log(`AI-${playerIndex}: (${playStyle}) Constructed play (higher rank + wilds) is valid.`); sortHand(playAttemptHigher.cards); return { chosenPlay: playAttemptHigher, playStyle: playStyle }; }
+        const playAttemptLower = { cards: [...lowerRankCards, ...wildCards], rankValue: RANK_VALUES[lowerRank], quantity: lowerRankCards.length + wildCards.length, usesWilds: wildCards.length > 0 };
+        if (isPlayValidVsLast(playAttemptLower, lastPlayedHand)) { console.log(`AI-${playerIndex}: (${playStyle}) Constructed play (lower rank + wilds) is valid.`); sortHand(playAttemptLower.cards); return { chosenPlay: playAttemptLower, playStyle: `${playStyle}_lower_rank` }; }
+        console.log(`AI-${playerIndex}: (${playStyle}) Neither constructed penultimate play was valid.`);
+    }
+
+    // P2: Stop Opponent Winning
+    if (minOpponentHandSize <= LOW_CARD_THRESHOLD_P2) {
+        playStyle = 'stop_opponent'; console.log(`AI-${playerIndex}: Priority 2 (${playStyle}): Opponent has <= ${LOW_CARD_THRESHOLD_P2} cards. Playing highest score.`);
+        let P2Candidates = [...validPlays];
+        P2Candidates.sort((a, b) => { let scoreA = a.rankValue - (a.usesWilds ? WILD_PENALTY : 0); let scoreB = b.rankValue - (b.usesWilds ? WILD_PENALTY : 0); if (scoreA !== scoreB) return scoreB - scoreA; if (a.quantity !== b.quantity) return b.quantity - a.quantity; return b.rankValue - a.rankValue; });
+        if (P2Candidates.length > 0) { sortHand(P2Candidates[0].cards); return { chosenPlay: P2Candidates[0], playStyle: playStyle }; }
+        console.log(`AI-${playerIndex}: (${playStyle}) No valid plays found.`); return { chosenPlay: null, playStyle: `pass_${playStyle}` };
+    }
+
+    // P4: Falling Behind
     if (aiHandLength >= leadingPlayerHandSize + FALLING_BEHIND_DIFF_P4) {
         playStyle = 'falling_behind'; console.log(`AI-${playerIndex}: Priority 4 (${playStyle}): Hand size ${aiHandLength} >= Leader size ${leadingPlayerHandSize} + ${FALLING_BEHIND_DIFF_P4}.`);
         let P4Candidates = [...validPlays]; console.log(`AI-${playerIndex}: (${playStyle}) Found ${P4Candidates.length} valid plays.`);
@@ -185,9 +291,19 @@ function chooseBestPlay(validPlays, playerIndex) {
         if (P4Candidates.length > 0) { let chosenP4 = P4Candidates[0]; let p4Style = `${playStyle}${chosenP4.usesWilds ? '_with_wilds' : '_no_wilds'}`; console.log(`AI-${playerIndex}: (${playStyle}) Playing lowest rank, fewest wilds play. Style: ${p4Style}`); sortHand(chosenP4.cards); return { chosenPlay: chosenP4, playStyle: p4Style }; }
         console.log(`AI-${playerIndex}: (${playStyle}) No suitable plays found. Passing.`); return { chosenPlay: null, playStyle: `pass_${playStyle}` };
     }
-    const highestCardId = findHighestNonWildCardId(aiHand); const lowestCardId = findLowestNonWildCardId(aiHand); const lowestCardRank = lowestCardId ? RANK_VALUES[aiHand.find(c=>c.id===lowestCardId)?.rank] : null;
+
+    // P5/P6 Common Setup
+    const highestCardId = findHighestNonWildCardId(aiHand);
+    const lowestCardId = findLowestNonWildCardId(aiHand);
+    // --- Modified line that might have caused the error ---
+    // Ensure aiHand.find runs only if lowestCardId is valid and aiHand exists (already checked above)
+    const lowestCardRank = lowestCardId ? RANK_VALUES[aiHand.find(c => c && c.id === lowestCardId)?.rank] : null; // Added check for `c` inside find
+
+
+    // P5: Confident
     if (myAvgScore >= tableAvgScore) {
-        playStyle = 'confident'; console.log(`AI-${playerIndex}: Priority 5 (${playStyle}): Avg Score ${myAvgScore.toFixed(1)} >= Table Avg ${tableAvgScore.toFixed(1)}.`); let P5Choice = null;
+        playStyle = 'confident'; console.log(`AI-${playerIndex}: Priority 5 (${playStyle}): Avg Score ${myAvgScore.toFixed(1)} >= Table Avg ${tableAvgScore.toFixed(1)}.`);
+        let P5Choice = null;
         let filteredList = filterAndSortLowestP5P6(validPlays, 4, 2, highestCardId, lowestCardId, lastRankValue);
         if (filteredList && filteredList.length > 0) {
             console.log(`AI-${playerIndex}: (${playStyle}) Found ${filteredList.length} suitable plays (rank<=+4, royal<=+2, OR contains lowest card). Sorted by rank, then wilds, then quantity.`); P5Choice = filteredList[0]; playStyle = `${playStyle}${P5Choice.usesWilds ? '_with_wilds' : '_no_wilds'}`;
@@ -201,8 +317,10 @@ function chooseBestPlay(validPlays, playerIndex) {
         }
         console.log(`AI-${playerIndex}: (${playStyle}) No suitable plays found within confident limits. Passing.`); return { chosenPlay: null, playStyle: `pass_${playStyle}` };
     }
+    // P6: Conservative
     else {
-        playStyle = 'conservative'; console.log(`AI-${playerIndex}: Priority 6 (${playStyle}): Avg Score ${myAvgScore.toFixed(1)} < Table Avg ${tableAvgScore.toFixed(1)}.`); let P6Choice = null; let rankPlus3Play = null;
+        playStyle = 'conservative'; console.log(`AI-${playerIndex}: Priority 6 (${playStyle}): Avg Score ${myAvgScore.toFixed(1)} < Table Avg ${tableAvgScore.toFixed(1)}.`);
+        let P6Choice = null; let rankPlus3Play = null;
         if (lastRankValue !== -1) {
             const potentialRank = lastRankValue + 3; const rankPlus3Candidates = validPlays.filter(play => play.rankValue === potentialRank && !play.usesWilds && play.rankValue < ROYAL_VALUE_THRESHOLD);
             if (rankPlus3Candidates.length > 0) { rankPlus3Candidates.sort((a, b) => b.quantity - a.quantity); rankPlus3Play = rankPlus3Candidates[0]; console.log(`AI-${playerIndex}: (${playStyle}) Found valid Rank+3 play (no wilds/royals):`, rankPlus3Play.cards.map(c=>c.display)); }
@@ -219,22 +337,332 @@ function chooseBestPlay(validPlays, playerIndex) {
                  console.log(`AI-${playerIndex}: (${playStyle}) Applying Ace Start + Lowest Single rule.`); let foundAlternative = false;
                  for (let i = 1; i < combinedP6Candidates.length; i++) { if (!combinedP6Candidates[i].usesWilds) { P6Choice = combinedP6Candidates[i]; playStyle += '_ace_start_swap_no_wild'; console.log(`AI-${playerIndex}: (${playStyle}) Found non-wild second best play. Switching choice.`); foundAlternative = true; break; } }
                   if (!foundAlternative) { console.log(`AI-${playerIndex}: (${playStyle}) Lowest was single, but no non-wild alternative found. Sticking with lowest single.`); }
-            }
-            sortHand(P6Choice.cards); return { chosenPlay: P6Choice, playStyle: playStyle };
-        }
-        console.log(`AI-${playerIndex}: (${playStyle}) No suitable plays found within conservative limits (including +3 check). Passing.`); return { chosenPlay: null, playStyle: `pass_${playStyle}` };
+             }
+             sortHand(P6Choice.cards); return { chosenPlay: P6Choice, playStyle: playStyle };
+         }
+         console.log(`AI-${playerIndex}: (${playStyle}) No suitable plays found within conservative limits (including +3 check). Passing.`); return { chosenPlay: null, playStyle: `pass_${playStyle}` };
     }
 } // End chooseBestPlay
+
 function shouldAIPassStrategically(chosenPlay, gameState, playerIndex, playStyle) { if (playStyle.startsWith('pass_') || playStyle === 'stop_opponent' || playStyle.startsWith('penultimate')) { return false; } let minOpponentHandSize = Infinity; for (let i = 0; i < gameState.players.length; i++) { if (i !== playerIndex) { minOpponentHandSize = Math.min(minOpponentHandSize, gameState.players[i].hand.length); } } const aiHandSize = gameState.players[playerIndex].hand.length; if (minOpponentHandSize <= LOW_CARD_THRESHOLD_P2 || aiHandSize <= ENDGAME_THRESHOLD) { return false; } if (chosenPlay.rankValue >= KING_VALUE && (!gameState.lastPlayedHand || gameState.lastPlayedHand.rankValue < QUEEN_VALUE)) { console.log(`AI-${playerIndex}: (${playStyle}) Strategic Pass considered: Play uses K/A unnecessarily.`); return true; } if (chosenPlay.usesWilds && chosenPlay.quantity === 2 && chosenPlay.rankValue < QUEEN_VALUE) { console.log(`AI-${playerIndex}: (${playStyle}) Strategic Pass considered: Play uses wild(s) for low double.`); return true; } return false; }
-function handleAITurn(playerIndex) { const playerName = gameState.players[playerIndex].name; const playerHand = gameState.players[playerIndex].hand; console.log(`--- AI Turn Start: ${playerName} (Index: ${playerIndex}) ---`); console.log(`Current passedPlayers: [${gameState.passedPlayers.join(', ')}]`); gameState.turnCount++; if (!gameState.isGameStarted && playerHand.some(card => card.rank === '4' && card.suit === 'hearts')) { console.log(`AI (${playerName}) needs to play 4♥.`); let fourHPlay = null; const plays = findValidPlays(playerHand, null); fourHPlay = plays.find(p => p.cards.some(c => c.rank === '4' && c.suit === 'hearts')); if (fourHPlay) { console.log(`AI (${playerName}) chose to play 4♥ combo:`, fourHPlay.cards.map(c=>c.display)); logDetailedTurn('play', { cards: fourHPlay.cards.map(c => c.display).join(';'), rank: fourHPlay.rankValue, qty: fourHPlay.quantity, wilds: fourHPlay.usesWilds, style: 'start_4h' }); gameState.lastPlayedHand = { ...fourHPlay, playerIndex: playerIndex }; trackPlayedCards(fourHPlay); const playedCardIds = fourHPlay.cards.map(card => card.id); gameState.players[playerIndex].hand = playerHand.filter(card => !playedCardIds.includes(card.id)); gameState.isGameStarted = true; console.log(">>> Game started after 4H play."); logPlay(playerIndex, fourHPlay); renderPlayArea(gameState.lastPlayedHand); renderHands(gameState.players); if (gameState.players[playerIndex].hand.length === 0) { declareWinner(playerIndex); return; } if (fourHPlay.rankValue === ACE_VALUE) { console.log(`>>> Processing Ace play round win`); logEvent(`Aces played by ${playerName} - Round Over!`, "round-end"); logDetailedTurn('round_end', { reason: 'ace', winner: playerIndex }); updateStatus(`${playerName} played Aces...`); setTimeout(() => { startNextRound(playerIndex); }, ROUND_END_DELAY); return; } updateStatus(`${playerName} played. Advancing turn...`); advanceTurn(); return; } else { console.error(`AI (${playerName}) has 4♥ but couldn't find/choose a valid play! Passing (Error).`); logDetailedTurn('pass', { reason: 'no_4h_play_chosen' }); if (!gameState.passedPlayers.includes(playerIndex)) gameState.passedPlayers.push(playerIndex); logEvent(`${playerName} passed (Error).`, 'pass'); renderHands(gameState.players); updateStatus(`${playerName} passed (Error). Advancing turn...`); advanceTurn(); return; } } const validPlays = findValidPlays(playerHand, gameState.lastPlayedHand); let { chosenPlay, playStyle } = chooseBestPlay(validPlays, playerIndex); let executePass = !chosenPlay; let passReason = executePass ? playStyle : 'no_pass'; if (chosenPlay && !executePass && shouldAIPassStrategically(chosenPlay, gameState, playerIndex, playStyle)) { const canPass = !(!gameState.lastPlayedHand || gameState.lastPlayedHand.playerIndex === playerIndex); if (canPass) { console.log(`AI (${playerName}) decided to pass strategically.`); chosenPlay = null; executePass = true; passReason = 'strategic'; } else { console.log(`AI (${playerName}) wanted to pass strategically, but cannot.`); executePass = false; } } if (chosenPlay && !executePass) { const isWinningPlay = playerHand.length === chosenPlay.quantity; if (isWinningPlay) { const isInvalidWinningPlay = chosenPlay.cards.some(card => card.value === ACE_VALUE || card.isWild); if (isInvalidWinningPlay) { console.log(`AI (${playerName}) chose invalid winning hand [${chosenPlay.cards.map(c=>c.display).join(', ')}]. Forcing pass.`); chosenPlay = null; executePass = true; passReason = 'invalid_win_forced_pass'; } } } if (chosenPlay && !executePass) { console.log(`AI (${playerName}) executing play:`, chosenPlay.cards.map(c=>c.display)); sortHand(chosenPlay.cards); logDetailedTurn('play', { cards: chosenPlay.cards.map(c => c.display).join(';'), rank: chosenPlay.rankValue, qty: chosenPlay.quantity, wilds: chosenPlay.usesWilds, style: playStyle }); gameState.lastPlayedHand = { ...chosenPlay, playerIndex: playerIndex }; trackPlayedCards(chosenPlay); const playedCardIds = chosenPlay.cards.map(card => card.id); gameState.players[playerIndex].hand = playerHand.filter(card => !playedCardIds.includes(card.id)); logPlay(playerIndex, chosenPlay); renderPlayArea(gameState.lastPlayedHand); renderHands(gameState.players); if (gameState.players[playerIndex].hand.length === 0) { declareWinner(playerIndex); return; } if (chosenPlay.rankValue === ACE_VALUE) { console.log(`>>> Processing Ace play round win for AI (${playerIndex}).`); logEvent(`Aces played by ${playerName} - Round Over!`, "round-end"); logDetailedTurn('round_end', { reason: 'ace', winner: playerIndex }); updateStatus(`${playerName} played Aces...`); setTimeout(() => { startNextRound(playerIndex); }, ROUND_END_DELAY); return; } advanceTurn(); } else { console.log(`AI (${playerName}) passing. Reason: ${passReason}.`); logDetailedTurn('pass', { reason: passReason }); if (!gameState.passedPlayers.includes(playerIndex)) { gameState.passedPlayers.push(playerIndex); console.log(`AI ${playerName} added to passed list. Passed players: [${gameState.passedPlayers.join(', ')}]`); logEvent(`${playerName} passed.`, 'pass'); } renderHands(gameState.players); updateStatus(`${playerName} passed. Advancing turn...`); if (checkRoundOver()) { const roundWinnerIndex = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1; if (roundWinnerIndex !== -1) { const winnerName = gameState.players[roundWinnerIndex].name; console.log(`>>> AI Pass: Round over! Winner: Player ${roundWinnerIndex}.`); logEvent(`${winnerName} wins the round (opponents passed).`, 'round-end'); logDetailedTurn('round_end', { reason: 'pass', winner: roundWinnerIndex }); updateStatus(`Round over! ${winnerName} wins...`); setTimeout(() => { startNextRound(roundWinnerIndex); }, STANDARD_ROUND_END_DELAY); } else { console.error("Round over after AI pass, but couldn't determine winner!"); advanceTurn(); } } else { advanceTurn(); } } }
+function handleAITurn(playerIndex) {
+    const aiPlayer = gameState.players[playerIndex];
+    // Add check if aiPlayer exists right at the start
+    if (!aiPlayer) {
+        console.error(`handleAITurn: Invalid playerIndex ${playerIndex}. Cannot proceed.`);
+        // Potentially advance turn to next player or handle error state
+        return;
+    }
+    const playerName = aiPlayer.name;
+    const playerHand = aiPlayer.hand;
+    console.log(`--- AI Turn Start: ${playerName} (Index: ${playerIndex}) ---`);
+    console.log(`Current passedPlayers: [${gameState.passedPlayers.join(', ')}]`);
+    aiPlayer.lastReasoning = "Thinking...";
+    renderHands(gameState.players);
+    setTimeout(() => {
+        gameState.turnCount++;
+        let actionReason = "";
+        let minOpponentHandSizeForReasoning = Infinity;
+         gameState.players.forEach((p, idx) => { if(idx !== playerIndex && p) { minOpponentHandSizeForReasoning = Math.min(minOpponentHandSizeForReasoning, p.hand.length); } });
+        if (!gameState.isGameStarted && playerHand && playerHand.some(card => card.rank === '4' && card.suit === 'hearts')) { // Added check for playerHand
+            console.log(`AI (${playerName}) needs to play 4♥.`);
+            const plays = findValidPlays(playerHand, null);
+            let fourHPlay = plays.find(p => p.cards.some(c => c.rank === '4' && c.suit === 'hearts'));
+            if (fourHPlay) {
+                actionReason = generateReasoningText('start_4h', fourHPlay);
+                aiPlayer.lastReasoning = actionReason;
+                console.log(`AI (${playerName}) Reason: ${actionReason}`);
+                logDetailedTurn('play', { cards: fourHPlay.cards.map(c => c.display).join(';'), rank: fourHPlay.rankValue, qty: fourHPlay.quantity, wilds: fourHPlay.usesWilds, style: 'start_4h' });
+                gameState.lastPlayedHand = { ...fourHPlay, playerIndex: playerIndex };
+                trackPlayedCards(fourHPlay);
+                const playedCardIds = fourHPlay.cards.map(card => card.id);
+                gameState.players[playerIndex].hand = playerHand.filter(card => !playedCardIds.includes(card.id));
+                gameState.isGameStarted = true;
+                logPlay(playerIndex, fourHPlay);
+                renderPlayArea(gameState.lastPlayedHand);
+                renderHands(gameState.players);
+                if (gameState.players[playerIndex].hand.length === 0) { declareWinner(playerIndex); return; }
+                if (fourHPlay.rankValue === ACE_VALUE) {
+                    logEvent(`Aces played by ${playerName} - Round Over!`, "round-end");
+                    logDetailedTurn('round_end', { reason: 'ace', winner: playerIndex });
+                    updateStatus(`${playerName} played Aces...`);
+                    setTimeout(() => { startNextRound(playerIndex); }, ROUND_END_DELAY);
+                    return;
+                }
+                updateStatus(`${playerName} played. Advancing turn...`);
+                advanceTurn();
+                return;
+            } else {
+                actionReason = generateReasoningText('pass_no_4h_play_chosen');
+                aiPlayer.lastReasoning = actionReason;
+                console.error(`AI (${playerName}) has 4♥ but couldn't find/choose a valid play! Passing (Error). Reason: ${actionReason}`);
+                logDetailedTurn('pass', { reason: 'no_4h_play_chosen' });
+                if (!gameState.passedPlayers.includes(playerIndex)) gameState.passedPlayers.push(playerIndex);
+                logEvent(`${playerName} passed (Error).`, 'pass');
+                renderHands(gameState.players);
+                updateStatus(`${playerName} passed (Error). Advancing turn...`);
+                advanceTurn();
+                return;
+            }
+        }
+        const validPlays = findValidPlays(playerHand, gameState.lastPlayedHand);
+        let { chosenPlay, playStyle } = chooseBestPlay(validPlays, playerIndex);
+        let executePass = !chosenPlay;
+        let passReasonCode = executePass ? playStyle : 'no_pass';
+        if (chosenPlay && !executePass && shouldAIPassStrategically(chosenPlay, gameState, playerIndex, playStyle)) {
+            const canPass = !(!gameState.lastPlayedHand || gameState.lastPlayedHand.playerIndex === playerIndex);
+            if (canPass) { console.log(`AI (${playerName}) decided to pass strategically.`); chosenPlay = null; executePass = true; passReasonCode = 'pass_strategic'; }
+            else { console.log(`AI (${playerName}) wanted to pass strategically, but cannot.`); executePass = false; }
+        }
+        if (chosenPlay && !executePass) {
+            const isWinningPlay = playerHand.length === chosenPlay.quantity;
+            if (isWinningPlay) {
+                const isInvalidWinningPlay = chosenPlay.cards.some(card => card.value === ACE_VALUE || card.isWild);
+                if (isInvalidWinningPlay) { console.log(`AI (${playerName}) chose invalid winning hand [${chosenPlay.cards.map(c=>c.display).join(', ')}]. Forcing pass.`); chosenPlay = null; executePass = true; passReasonCode = 'pass_invalid_win_forced_pass'; }
+            }
+        }
+        if (chosenPlay && !executePass) {
+            actionReason = generateReasoningText(playStyle, chosenPlay, minOpponentHandSizeForReasoning);
+            aiPlayer.lastReasoning = actionReason;
+            console.log(`AI (${playerName}) executing play: ${chosenPlay.cards.map(c=>c.display).join(', ')}. Reason: ${actionReason}`);
+            sortHand(chosenPlay.cards);
+            logDetailedTurn('play', { cards: chosenPlay.cards.map(c => c.display).join(';'), rank: chosenPlay.rankValue, qty: chosenPlay.quantity, wilds: chosenPlay.usesWilds, style: playStyle });
+            gameState.lastPlayedHand = { ...chosenPlay, playerIndex: playerIndex };
+            trackPlayedCards(chosenPlay);
+            const playedCardIds = chosenPlay.cards.map(card => card.id);
+            gameState.players[playerIndex].hand = playerHand.filter(card => !playedCardIds.includes(card.id));
+            logPlay(playerIndex, chosenPlay);
+            renderPlayArea(gameState.lastPlayedHand);
+            renderHands(gameState.players);
+            if (gameState.players[playerIndex].hand.length === 0) { declareWinner(playerIndex); return; }
+            if (chosenPlay.rankValue === ACE_VALUE) {
+                logEvent(`Aces played by ${playerName} - Round Over!`, "round-end");
+                logDetailedTurn('round_end', { reason: 'ace', winner: playerIndex });
+                updateStatus(`${playerName} played Aces...`);
+                setTimeout(() => { startNextRound(playerIndex); }, ROUND_END_DELAY);
+                return;
+            }
+            advanceTurn();
+        } else {
+            actionReason = generateReasoningText(passReasonCode);
+            aiPlayer.lastReasoning = actionReason;
+            console.log(`AI (${playerName}) passing. Reason: ${actionReason}`);
+            logDetailedTurn('pass', { reason: passReasonCode.startsWith('pass_') ? passReasonCode.substring(5) : passReasonCode });
+            if (!gameState.passedPlayers.includes(playerIndex)) { gameState.passedPlayers.push(playerIndex); logEvent(`${playerName} passed.`, 'pass'); }
+            renderHands(gameState.players);
+            updateStatus(`${playerName} passed. Advancing turn...`);
+            if (checkRoundOver()) {
+                const roundWinnerIndex = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1;
+                if (roundWinnerIndex !== -1) {
+                    const winnerName = gameState.players[roundWinnerIndex].name;
+                    logEvent(`${winnerName} wins the round (opponents passed).`, 'round-end');
+                    logDetailedTurn('round_end', { reason: 'pass', winner: roundWinnerIndex });
+                    updateStatus(`Round over! ${winnerName} wins...`);
+                    setTimeout(() => { startNextRound(roundWinnerIndex); }, STANDARD_ROUND_END_DELAY);
+                } else { console.error("Round over after AI pass, but couldn't determine winner!"); advanceTurn(); }
+            } else { advanceTurn(); }
+        }
+    }, AI_REASONING_DELAY);
+}
+
 
 // --- Round and Turn Management ---
 function checkRoundOver() { const activePlayers = gameState.players.length; const neededToPass = activePlayers - 1; const result = gameState.passedPlayers.length >= neededToPass; console.log(`--- checkRoundOver: Passed players: [${gameState.passedPlayers.join(', ')}] (${gameState.passedPlayers.length}). Needed: ${neededToPass}. Result: ${result} ---`); return result; }
-function startNextRound(winnerIndex) { console.log(`>>> startNextRound called for winner: Player ${winnerIndex} <<<`); if (gameState.isGameOver) return; const winnerName = gameState.players[winnerIndex].name; console.log(`Starting next round. Winner: ${winnerName}`); gameState.passedPlayers = []; console.log(">>> startNextRound: Passed players reset."); gameState.lastPlayedHand = null; renderPlayArea(null); const logArea = document.getElementById('play-log'); if (logArea) logArea.innerHTML = ''; else console.error("Play log area not found for clearing."); gameState.currentPlayerIndex = winnerIndex; renderHands(gameState.players); updateStatus(`Round won by ${winnerName}. Starting next round. It's ${winnerName}'s turn.`); if (winnerIndex > 0) { console.log(`Scheduling AI turn for ${winnerName} (starting new round) in ${ROUND_END_DELAY}ms`); setTimeout(() => { if(gameState.currentPlayerIndex === winnerIndex && !gameState.isGameOver) { console.log(`--- Timeout executing for startNextRound winner ${winnerName} ---`); handleAITurn(winnerIndex); } else { console.log(`--- Timeout skipped for startNextRound winner ${winnerName} (state changed) ---`); } }, ROUND_END_DELAY); } }
-function advanceTurn() { console.log(`--- advanceTurn called. Current player: ${gameState.currentPlayerIndex} ---`); if (gameState.isGameOver) { console.log("advanceTurn: Game is over, returning."); return; } gameState.turnCount++; let nextPlayerIndex = gameState.currentPlayerIndex; let loopGuard = 0; const initialIndex = gameState.currentPlayerIndex; do { nextPlayerIndex = (nextPlayerIndex + 1) % gameState.players.length; loopGuard++; console.log(`advanceTurn loop: Checking index ${nextPlayerIndex}. Passed: ${gameState.passedPlayers.includes(nextPlayerIndex)}. Guard: ${loopGuard}`); if (loopGuard > gameState.players.length * 2) { console.error("Infinite loop detected in advanceTurn! Breaking."); updateStatus("Error: Turn advancement loop detected."); return; } if (nextPlayerIndex === initialIndex && loopGuard > gameState.players.length) { console.error("advanceTurn looped back to start without finding next player. Round should be over?"); if(checkRoundOver()){ const rWI = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1; if(rWI !== -1) { console.log(`Round over detected in advanceTurn loop. Starting next round for winner ${rWI}`); startNextRound(rWI); } else { console.error("Round over state detected in advanceTurn loop, but no winner found."); updateStatus("Error: Could not determine round winner."); } } else { console.error("advanceTurn loop detected, but checkRoundOver is false?"); updateStatus("Error: Turn advancement failed."); } return; } } while (gameState.passedPlayers.includes(nextPlayerIndex)); console.log(`advanceTurn: Next player determined: ${nextPlayerIndex}`); gameState.currentPlayerIndex = nextPlayerIndex; const nextPlayer = gameState.players[gameState.currentPlayerIndex]; updateStatus(`It's ${nextPlayer.name}'s turn.`); renderHands(gameState.players); if (gameState.currentPlayerIndex > 0) { console.log(`Scheduling AI turn for ${nextPlayer.name} in ${AI_TURN_DELAY}ms`); setTimeout(() => { if(gameState.currentPlayerIndex === nextPlayer.id - 1 && !gameState.isGameOver) { console.log(`--- Timeout executing for AI ${nextPlayer.name} ---`); handleAITurn(gameState.currentPlayerIndex); } else { console.log(`--- Timeout skipped for AI ${nextPlayer.name} (state changed: Current: ${gameState.currentPlayerIndex}, Expected: ${nextPlayer.id - 1}, GameOver: ${gameState.isGameOver}) ---`); } }, AI_TURN_DELAY); } else { console.log("It's the Human player's turn."); } }
+function startNextRound(winnerIndex) {
+    console.log(`>>> startNextRound called for winner: Player ${winnerIndex} <<<`);
+    if (gameState.isGameOver) return;
+    // Ensure winnerIndex is valid before accessing player
+    if (winnerIndex < 0 || winnerIndex >= gameState.players.length || !gameState.players[winnerIndex]) {
+        console.error(`startNextRound: Invalid winnerIndex ${winnerIndex}`);
+        // Handle error - maybe default to player 0 or stop?
+        return;
+    }
+    const winnerName = gameState.players[winnerIndex].name;
+    console.log(`Starting next round. Winner: ${winnerName}`);
+    gameState.passedPlayers = [];
+    gameState.players.forEach(p => { if(p && p.id !== 1) p.lastReasoning = ""; }); // Added null check for p
+    gameState.lastPlayedHand = null;
+    renderPlayArea(null);
+    const logArea = document.getElementById('play-log');
+    if (logArea) logArea.innerHTML = ''; else console.error("Play log area not found for clearing.");
+    gameState.currentPlayerIndex = winnerIndex;
+    renderHands(gameState.players);
+    updateStatus(`Round won by ${winnerName}. Starting next round. It's ${winnerName}'s turn.`);
+    if (winnerIndex > 0) {
+        if (gameState.players[winnerIndex]) { // Check again before setting reasoning
+             gameState.players[winnerIndex].lastReasoning = "Thinking...";
+             renderHands(gameState.players);
+        }
+        console.log(`Scheduling AI turn for ${winnerName} (starting new round) in ${ROUND_END_DELAY}ms`);
+        setTimeout(() => {
+            if (gameState.currentPlayerIndex === winnerIndex && !gameState.isGameOver) {
+                console.log(`--- Timeout executing for startNextRound winner ${winnerName} ---`);
+                handleAITurn(winnerIndex);
+            } else {
+                console.log(`--- Timeout skipped for startNextRound winner ${winnerName} (state changed) ---`);
+            }
+        }, ROUND_END_DELAY);
+    }
+}
+function advanceTurn() {
+    console.log(`--- advanceTurn called. Current player: ${gameState.currentPlayerIndex} ---`);
+    if (gameState.isGameOver) { console.log("advanceTurn: Game is over, returning."); return; }
+    gameState.turnCount++;
+    let nextPlayerIndex = gameState.currentPlayerIndex;
+    let loopGuard = 0;
+    const initialIndex = gameState.currentPlayerIndex;
+    do {
+        nextPlayerIndex = (nextPlayerIndex + 1) % gameState.players.length;
+        loopGuard++;
+        console.log(`advanceTurn loop: Checking index ${nextPlayerIndex}. Passed: ${gameState.passedPlayers.includes(nextPlayerIndex)}. Guard: ${loopGuard}`);
+        if (loopGuard > gameState.players.length * 2) { console.error("Infinite loop detected in advanceTurn! Breaking."); updateStatus("Error: Turn advancement loop detected."); return; }
+        if (nextPlayerIndex === initialIndex && loopGuard > gameState.players.length) {
+            console.error("advanceTurn looped back to start without finding next player. Round should be over?");
+            if(checkRoundOver()){
+                const rWI = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1;
+                if(rWI !== -1 && rWI < gameState.players.length && gameState.players[rWI]) { // Check validity of rWI
+                    console.log(`Round over detected in advanceTurn loop. Starting next round for winner ${rWI}`);
+                    startNextRound(rWI);
+                } else {
+                     console.error(`Round over state detected in advanceTurn loop, but winner index ${rWI} is invalid or not found.`);
+                     updateStatus("Error: Could not determine round winner.");
+                     // Consider stopping the game or defaulting behavior here
+                }
+            } else {
+                console.error("advanceTurn loop detected, but checkRoundOver is false?");
+                updateStatus("Error: Turn advancement failed.");
+                 // Consider stopping the game
+            }
+            return;
+        }
+    } while (gameState.passedPlayers.includes(nextPlayerIndex));
+
+    console.log(`advanceTurn: Next player determined: ${nextPlayerIndex}`);
+    gameState.currentPlayerIndex = nextPlayerIndex;
+
+    // Ensure the next player exists before proceeding
+    if (nextPlayerIndex < 0 || nextPlayerIndex >= gameState.players.length || !gameState.players[nextPlayerIndex]) {
+        console.error(`advanceTurn: Determined invalid nextPlayerIndex ${nextPlayerIndex}`);
+        updateStatus("Error: Invalid next player.");
+        // Handle error state appropriately
+        return;
+    }
+
+    const nextPlayer = gameState.players[gameState.currentPlayerIndex];
+    updateStatus(`It's ${nextPlayer.name}'s turn.`);
+    renderHands(gameState.players); // Render immediately to show highlight
+
+    if (gameState.currentPlayerIndex > 0) { // If AI's turn
+        if (gameState.players[gameState.currentPlayerIndex]) { // Check player exists
+            gameState.players[gameState.currentPlayerIndex].lastReasoning = "Thinking..."; // Set thinking state
+            renderHands(gameState.players); // Show thinking state
+        }
+        console.log(`Scheduling AI turn for ${nextPlayer.name} in ${AI_TURN_DELAY}ms`);
+        setTimeout(() => {
+            // Check if still AI's turn, player exists, and game not over
+            if (gameState.currentPlayerIndex === nextPlayer.id - 1
+                && !gameState.isGameOver
+                && gameState.players[gameState.currentPlayerIndex])
+            {
+                console.log(`--- Timeout executing for AI ${nextPlayer.name} ---`);
+                handleAITurn(gameState.currentPlayerIndex);
+            } else {
+                console.log(`--- Timeout skipped for AI ${nextPlayer.name} (state changed: Current: ${gameState.currentPlayerIndex}, Expected: ${nextPlayer.id - 1}, GameOver: ${gameState.isGameOver}, Player Exists: ${!!gameState.players[nextPlayer.id - 1]}) ---`);
+            }
+        }, AI_TURN_DELAY);
+    } else {
+        console.log("It's the Human player's turn.");
+    }
+}
+
 
 // --- Game Initialization ---
-function initializeGame(showGamePage = true) { console.log("Initializing Swedish Kings..."); updateStatus("Setting up game..."); gameCounter++; currentGameDetailedLog = []; logDetailedTurn('game_start'); let availableNames = [...COMPUTER_NAMES]; let nameIndex1 = Math.floor(Math.random() * availableNames.length); gameState.players[1].name = availableNames[nameIndex1]; availableNames.splice(nameIndex1, 1); let nameIndex2 = Math.floor(Math.random() * availableNames.length); gameState.players[2].name = availableNames[nameIndex2]; console.log(`Assigned names: P1=${gameState.players[1].name}, P2=${gameState.players[2].name}`); gameState.deck = createDeck(); shuffleDeck(gameState.deck); gameState.players.forEach(p => { p.hand = []; }); selectedCards = []; gameState.lastPlayedHand = null; gameState.passedPlayers = []; gameState.isGameOver = false; gameState.winner = null; gameState.isGameStarted = false; gameState.turnCount = 0; gameState.playedCards = {}; dealCards(gameState.deck, gameState.players); console.log("Cards dealt."); PLAYER_AREA_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('player-wins'); el.classList.remove('player-passed'); } }); let sPF = false; for (let i = 0; i < gameState.players.length; i++) { if (gameState.players[i].hand.some(c => c.rank === '4' && c.suit === 'hearts')) { gameState.currentPlayerIndex = i; sPF = true; break; } } if (!sPF) { console.error("CRITICAL ERROR: 4 of Hearts not found! Defaulting to Player 0."); gameState.currentPlayerIndex = 0; } renderHands(gameState.players); renderPlayArea(null); const logArea = document.getElementById('play-log'); if (logArea) logArea.innerHTML = ''; const pB = document.getElementById('play-button'); const passB = document.getElementById('pass-button'); const clearB = document.getElementById('clear-selection-button'); if (pB) pB.disabled = false; if (passB) passB.disabled = false; if (clearB) clearB.disabled = false; const sN = gameState.players[gameState.currentPlayerIndex].name; updateStatus(`Game started. ${sN}'s turn. Must play 4♥.`); console.log(`Game ready. Starting player index: ${gameState.currentPlayerIndex} (${sN})`); if (showGamePage) { showPage('game-page'); } if (gameState.currentPlayerIndex > 0) { console.log(`Scheduling initial AI turn for ${sN} in ${AI_TURN_DELAY}ms`); setTimeout(() => { if(gameState.currentPlayerIndex > 0 && gameState.currentPlayerIndex === (gameState.players[gameState.currentPlayerIndex].id - 1) && !gameState.isGameOver) { handleAITurn(gameState.currentPlayerIndex); } else { console.log(`Initial AI turn for P${gameState.currentPlayerIndex+1} skipped as state changed.`); } }, AI_TURN_DELAY); } }
+function initializeGame(showGamePage = true) {
+    console.log("Initializing Swedish Kings...");
+    updateStatus("Setting up game...");
+    gameCounter++;
+    currentGameDetailedLog = [];
+    logDetailedTurn('game_start');
+    let availableNames = [...COMPUTER_NAMES];
+    let nameIndex1 = Math.floor(Math.random() * availableNames.length);
+    gameState.players[1].name = availableNames[nameIndex1];
+    availableNames.splice(nameIndex1, 1);
+    let nameIndex2 = Math.floor(Math.random() * availableNames.length);
+    gameState.players[2].name = availableNames[nameIndex2];
+    console.log(`Assigned names: P1=${gameState.players[1].name}, P2=${gameState.players[2].name}`);
+    gameState.deck = createDeck();
+    shuffleDeck(gameState.deck);
+    gameState.players.forEach(p => { if(p) { p.hand = []; if (p.id !== 1) p.lastReasoning = ""; }}); // Added null check
+    selectedCards = [];
+    gameState.lastPlayedHand = null;
+    gameState.passedPlayers = [];
+    gameState.isGameOver = false;
+    gameState.winner = null;
+    gameState.isGameStarted = false;
+    gameState.turnCount = 0;
+    gameState.playedCards = {};
+    dealCards(gameState.deck, gameState.players);
+    console.log("Cards dealt.");
+    PLAYER_AREA_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('player-wins'); el.classList.remove('player-passed'); } });
+    let sPF = false;
+    gameState.currentPlayerIndex = -1; // Reset before finding
+    for (let i = 0; i < gameState.players.length; i++) {
+        // Add null check for player and hand
+        if (gameState.players[i] && gameState.players[i].hand && gameState.players[i].hand.some(c => c.rank === '4' && c.suit === 'hearts')) {
+            gameState.currentPlayerIndex = i;
+            sPF = true;
+            break;
+        }
+    }
+    if (!sPF || gameState.currentPlayerIndex === -1) { // Handle if 4H not found or index not set
+        console.error("CRITICAL ERROR: 4 of Hearts not found or starting player index invalid! Defaulting to Player 0.");
+        gameState.currentPlayerIndex = 0;
+         // Ensure player 0 exists
+         if (!gameState.players[0]) {
+             console.error("CRITICAL ERROR: Player 0 does not exist after defaulting. Stopping initialization.");
+             updateStatus("Error: Failed to initialize game.");
+             return; // Stop initialization
+         }
+    }
+
+    renderHands(gameState.players);
+    renderPlayArea(null);
+    const logArea = document.getElementById('play-log'); if (logArea) logArea.innerHTML = '';
+    const pB = document.getElementById('play-button'); const passB = document.getElementById('pass-button'); const clearB = document.getElementById('clear-selection-button');
+    if (pB) pB.disabled = false; if (passB) passB.disabled = false; if (clearB) clearB.disabled = false;
+
+    // Check if currentPlayer exists before accessing name
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (!currentPlayer) {
+         console.error(`CRITICAL ERROR: Current player index ${gameState.currentPlayerIndex} is invalid after initialization.`);
+         updateStatus("Error: Failed to set starting player.");
+         return; // Stop initialization
+    }
+    const sN = currentPlayer.name;
+
+    updateStatus(`Game started. ${sN}'s turn. Must play 4♥.`);
+    console.log(`Game ready. Starting player index: ${gameState.currentPlayerIndex} (${sN})`);
+    if (showGamePage) { showPage('game-page'); }
+    if (gameState.currentPlayerIndex > 0) {
+        if (gameState.players[gameState.currentPlayerIndex]) { // Check player exists
+             gameState.players[gameState.currentPlayerIndex].lastReasoning = "Thinking...";
+             renderHands(gameState.players);
+        }
+        console.log(`Scheduling initial AI turn for ${sN} in ${AI_TURN_DELAY}ms`);
+        setTimeout(() => {
+            const startingAIPlayer = gameState.players[gameState.currentPlayerIndex]; // Re-check player state
+            if (gameState.currentPlayerIndex > 0
+                && startingAIPlayer && gameState.currentPlayerIndex === (startingAIPlayer.id - 1) // Check id too
+                && !gameState.isGameOver)
+            {
+                 handleAITurn(gameState.currentPlayerIndex);
+            } else {
+                console.log(`Initial AI turn for P${gameState.currentPlayerIndex+1} skipped as state changed.`);
+            }
+        }, AI_TURN_DELAY);
+    }
+}
+
 
 // --- Data Export Logic ---
 function formatAllLogsForSheet(logData) { if (!logData || logData.length === 0) return "No game logs recorded yet. Play some games first!"; const headers = [ "GameID", "Turn", "PlayerIndex", "PlayerName", "Action", "CardsPlayed", "Rank", "Quantity", "UsedWilds", "AIPlayStyle", "HandSizeBefore", "PassedListBefore", "LastPlayRank", "LastPlayQty", "Reason", "Winner" ]; const rows = logData.map(entry => { const details = entry.details || {}; const cardsStr = details.cards ? `"${details.cards.replace(/"/g, '""')}"` : ''; return [ entry.gameId, entry.turn, entry.playerIndex, `"${entry.playerName.replace(/"/g, '""')}"`, entry.action, cardsStr, details.rank ?? '', details.qty ?? '', details.wilds ?? '', details.style ?? '', entry.handSizeBefore, `"${entry.passedPlayersBefore?.join(';') ?? ''}"`, entry.lastPlayRank ?? '', entry.lastPlayQty ?? '', details.reason ?? '', details.winner ?? '' ].join(','); }); return `${headers.join(',')}\n${rows.join('\n')}`; }
@@ -244,40 +672,33 @@ function handleExportLogs() { const resultsTextArea = document.getElementById('e
 document.addEventListener('DOMContentLoaded', () => {
     initializeGame(false);
     showPage('rules-page');
-
     const newGameButton = document.getElementById('new-game-button');
-    if (newGameButton) {
-        newGameButton.addEventListener('click', () => initializeGame(true));
-    } else { console.error("New Game button not found"); }
-
+    if (newGameButton) { newGameButton.addEventListener('click', () => initializeGame(true)); }
+    else { console.error("New Game button not found"); }
     const playButton = document.getElementById('play-button');
     const passButton = document.getElementById('pass-button');
     const clearButton = document.getElementById('clear-selection-button');
-
-    if (playButton) {
-        playButton.addEventListener('click', handlePlayAction);
-    } else { console.error("Play button not found"); }
-
-    if (passButton) {
-        passButton.addEventListener('click', handlePassAction);
-    } else { console.error("Pass button not found"); }
-
-    if (clearButton) {
-        clearButton.addEventListener('click', handleClearSelection);
-    } else { console.error("Clear Selection button not found"); }
-
+    const aiReasoningToggle = document.getElementById('ai-reasoning-toggle');
+    const gameBoard = document.getElementById('game-board');
+    if (playButton) { playButton.addEventListener('click', handlePlayAction); }
+    else { console.error("Play button not found"); }
+    if (passButton) { passButton.addEventListener('click', handlePassAction); }
+    else { console.error("Pass button not found"); }
+    if (clearButton) { clearButton.addEventListener('click', handleClearSelection); }
+    else { console.error("Clear Selection button not found"); }
+    if (aiReasoningToggle && gameBoard) {
+        aiReasoningToggle.addEventListener('change', (event) => {
+            if (event.target.checked) { gameBoard.classList.add('show-ai-reasoning'); console.log("AI Reasoning: Shown"); }
+            else { gameBoard.classList.remove('show-ai-reasoning'); console.log("AI Reasoning: Hidden"); }
+        });
+    } else { console.error("AI Reasoning Toggle or Game Board element not found."); }
     const exportButton = document.getElementById('export-logs-button');
-    if (exportButton) {
-        exportButton.addEventListener('click', handleExportLogs);
-    } else { console.error("Export button not found"); }
-
+    if (exportButton) { exportButton.addEventListener('click', handleExportLogs); }
+    else { console.error("Export button not found"); }
     const startGameButton = document.getElementById('start-game-button');
-    if (startGameButton) {
-        startGameButton.addEventListener('click', () => showPage('game-page'));
-    } else { console.error("Start Game button not found"); }
-
+    if (startGameButton) { startGameButton.addEventListener('click', () => showPage('game-page')); }
+    else { console.error("Start Game button not found"); }
     const showRulesButton = document.getElementById('show-rules-button');
-    if (showRulesButton) {
-        showRulesButton.addEventListener('click', () => showPage('rules-page'));
-    } else { console.error("Show Rules button not found"); }
+    if (showRulesButton) { showRulesButton.addEventListener('click', () => showPage('rules-page')); }
+    else { console.error("Show Rules button not found"); }
 });

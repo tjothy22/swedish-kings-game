@@ -52,9 +52,7 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
     font-weight: bold; margin: 3px 6px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 2px; cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
 }
 #player-actions #play-button { background-color: #4CAF50; background-image: linear-gradient(to bottom, #5cb85c, #449d44); border-color: #398439; }
-/* --- Updated Pass Button Color --- */
 #player-actions #pass-button { background-color: #ff9800; background-image: linear-gradient(to bottom, #ffa726, #fb8c00); border-color: #e65100; }
-/* --- New Clear Selection Button Style --- */
 #player-actions #clear-selection-button { background-color: #9e9e9e; background-image: linear-gradient(to bottom, #bdbdbd, #757575); border-color: #616161; }
 
 #new-game-button { background-color: #dc3545; background-image: linear-gradient(to bottom, #d9534f, #c9302c); border-color: #ac2925; }
@@ -77,6 +75,25 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
 
 /* Game Page Specific Styles */
 .game-nav-buttons { text-align: center; margin-bottom: 8px; }
+
+/* --- Added AI Reasoning Toggle Styles --- */
+.toggle-switch {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 15px;
+}
+.toggle-switch label {
+    color: #eee;
+    font-size: 0.8em;
+    cursor: pointer;
+    margin-left: 4px;
+    user-select: none; /* Prevent text selection */
+}
+.toggle-switch input[type="checkbox"] {
+    vertical-align: middle;
+    cursor: pointer;
+}
+
 
 /* Game board grid layout */
 #game-board {
@@ -153,6 +170,29 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
 
 /* Player action buttons area */
 #player-actions { margin-top: 8px; text-align: center; }
+
+/* --- Added AI Reasoning Box Styles --- */
+.ai-reasoning {
+    display: none; /* Hidden by default */
+    margin-top: 8px;
+    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.ai-reasoning p {
+    font-size: 0.8em;
+    color: #ddd;
+    margin: 0;
+    font-style: italic;
+    text-align: center;
+    line-height: 1.3;
+}
+/* --- Rule to show reasoning boxes when toggle is active --- */
+#game-board.show-ai-reasoning .ai-reasoning {
+    display: block;
+}
+
 
 /* Export Controls */
 #export-controls { margin-top: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; background-color: rgba(255, 255, 255, 0.08); color: #eee; }
