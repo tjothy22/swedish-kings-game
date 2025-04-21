@@ -138,14 +138,15 @@
                 </div>
             </div>
 
-        </div> <div id="export-controls">
-            <h2>Export Game Data</h2>
-            <p>Play one or more games using the "New Game" button. Then click Export to get detailed turn data for all games played in this session.</p>
-            <button id="export-logs-button">Export Game Logs</button>
-            <p>Results (CSV format - Copy and paste into Sheets/Excel):</p>
-            <textarea id="exported-logs-textarea" rows="10" readonly placeholder="Detailed game logs will appear here after clicking Export..."></textarea>
         </div>
 
-    </div> <script src="game.js"></script>
+        <div id="stats-controls" class="stats-section">
+            <h2>Game Statistics (This Session)</h2>
+            <p>Games Played: <span id="stats-games-played">0</span></p>
+            <p>Games Won: <span id="stats-games-won">0</span></p>
+            <p>Win Percentage: <span id="stats-win-percentage">N/A</span></p>
+        </div>
+        </div>
+    <script src="game.js"></script>
 </body>
 </html>

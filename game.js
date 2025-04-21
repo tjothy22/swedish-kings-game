@@ -58,10 +58,15 @@ let gameState = {
     currentPlayerIndex: -1, lastPlayedHand: null, passedPlayers: [], isGameOver: false, winner: null, isGameStarted: false, turnCount: 0, playedCards: {} };
 let selectedCards = [];
 
-// --- Logging State ---
+// --- Session Statistics ---
+let totalGamesPlayed = 0; // New stat variable
+let userWins = 0; // New stat variable
+
+// --- Logging State (Optional - Keep if needed for debugging) ---
 let gameCounter = 0;
 let allGamesDetailedLog = [];
 let currentGameDetailedLog = [];
+
 
 // --- Core Functions ---
 function createCard(suit, rank) { const isWild = WILD_RANKS.includes(rank); let dR = rank; let dS = suit ? SUIT_SYMBOLS[suit] : ''; let id = rank === "Joker" ? `Joker-${Math.random().toString(36).substr(2, 5)}` : `${rank}-${suit}`; if (rank === "Joker") { dR = "Joker"; dS = ""; } return { id: id, suit: suit, rank: rank, value: RANK_VALUES[rank], isWild: isWild, display: `${dR}${dS}` }; }
@@ -96,7 +101,6 @@ function generateReasoningText(playStyle, chosenPlay = null, opponentHandSize = 
     return reason;
 }
 
-
 // --- Rendering Functions ---
 function renderCard(card) { /* ... */ const cE = document.createElement('div'); cE.classList.add('card'); cE.dataset.cardId = card.id; cE.textContent = card.display; cE.style.color = (card.suit === 'hearts' || card.suit === 'diamonds') ? 'red' : 'black'; if (card.rank === 'Joker') cE.style.fontWeight = 'bold'; return cE; }
 function renderHands(players) { /* ... */ const isGameOver = gameState.isGameOver; const passedPlayerIndices = gameState.passedPlayers; players.forEach((player, index) => { const isHuman = index === 0; let handElement, countElementId, playerAreaElement, reasoningElement; playerAreaElement = document.getElementById(PLAYER_AREA_IDS[index]); let playerNameElement = playerAreaElement?.querySelector('h2'); if (playerNameElement && player.name) { playerNameElement.textContent = player.name; } if (isHuman) { const wildsContainer = document.getElementById('p1-hand-wilds'); const lowContainer = document.getElementById('p1-hand-low'); const royalsContainer = document.getElementById('p1-hand-royals'); const countElement = document.getElementById('p1-count'); if (!wildsContainer || !lowContainer || !royalsContainer || !countElement) { return; } wildsContainer.innerHTML = ''; lowContainer.innerHTML = ''; royalsContainer.innerHTML = ''; if (player.hand) sortHand(player.hand); player.hand.forEach(card => { const cardEl = renderCard(card); const isSelected = selectedCards.some(selectedCard => selectedCard.id === card.id); if (!isGameOver && !passedPlayerIndices.includes(index)) { cardEl.addEventListener('click', handleCardClick); if (isSelected) { cardEl.classList.add('selected'); } } else { cardEl.style.cursor = 'default'; if (isSelected) { cardEl.classList.add('selected'); } } if (card.isWild) { wildsContainer.appendChild(cardEl); } else if (card.value < ROYAL_VALUE_THRESHOLD) { lowContainer.appendChild(cardEl); } else { royalsContainer.appendChild(cardEl); } }); countElement.textContent = player.hand?.length ?? 0; } else { if (index === 1) { handElementId = 'c1-hand'; countElementId = 'c1-count'; reasoningElement = document.getElementById('c1-reasoning'); } else { handElementId = 'c2-hand'; countElementId = 'c2-count'; reasoningElement = document.getElementById('c2-reasoning'); } handElement = document.getElementById(handElementId); const countElement = document.getElementById(countElementId); if (!handElement || !countElement || !reasoningElement) { return; } handElement.innerHTML = ''; if (isGameOver && player.hand && player.hand.length > 0) { sortHand(player.hand); player.hand.forEach(card => { const cardEl = renderCard(card); cardEl.style.cursor = 'default'; handElement.appendChild(cardEl); }); } else if (!isGameOver && player.hand) { player.hand.forEach(_ => { const cardEl = document.createElement('div'); cardEl.classList.add('card', 'card-back'); handElement.appendChild(cardEl); }); } countElement.textContent = player.hand?.length ?? 0; const reasoningParagraph = reasoningElement.querySelector('p'); if (reasoningParagraph) { let reasonText = player.lastReasoning || "Waiting..."; if (gameState.currentPlayerIndex === index && !isGameOver && !passedPlayerIndices.includes(index) && !player.lastReasoning) { reasonText = "Thinking..."; } reasoningParagraph.textContent = reasonText; } } if (playerAreaElement) { if (isGameOver && gameState.winner === index) { playerAreaElement.classList.add('player-wins'); } else { playerAreaElement.classList.remove('player-wins'); } if (!isGameOver && passedPlayerIndices.includes(index)) { playerAreaElement.classList.add('player-passed'); } else { playerAreaElement.classList.remove('player-passed'); } } }); updatePlayerHighlight(gameState.currentPlayerIndex); }
@@ -114,7 +118,53 @@ function handleClearSelection() { /* ... */ if (gameState.isGameOver || gameStat
 // --- Logging & Game State ---
 function logDetailedTurn(actionType, details = {}) { /* ... */ const entry={gameId:gameCounter,turn:gameState.turnCount,playerIndex:gameState.currentPlayerIndex,playerName:gameState.players[gameState.currentPlayerIndex]?.name||'N/A',action:actionType,handSizeBefore:gameState.players[gameState.currentPlayerIndex]?.hand?.length||0,passedPlayersBefore:[...gameState.passedPlayers],lastPlayRank:gameState.lastPlayedHand?.rankValue||null,lastPlayQty:gameState.lastPlayedHand?.quantity||null,details:details};currentGameDetailedLog.push(entry); }
 function trackPlayedCards(playedHand) { /* ... */ if (!playedHand || !playedHand.cards) return; for (const card of playedHand.cards) { if (!card.isWild) { const rank = card.rank; gameState.playedCards[rank] = (gameState.playedCards[rank] || 0) + 1; } } }
-function declareWinner(winnerIndex) { /* ... */ const winnerName = gameState.players[winnerIndex]?.name ?? `Player ${winnerIndex + 1}`; updateStatus(`${winnerName} won!`); gameState.isGameOver = true; gameState.winner = winnerIndex; logDetailedTurn('game_end', { winner: winnerIndex }); allGamesDetailedLog.push(...currentGameDetailedLog); const playButton = document.getElementById('play-button'); const passButton = document.getElementById('pass-button'); const clearButton = document.getElementById('clear-selection-button'); if (playButton) playButton.disabled = true; if (passButton) passButton.disabled = true; if (clearButton) clearButton.disabled = true; updatePlayerHighlight(-1); renderHands(gameState.players); }
+
+// --- NEW: Update Stats Display ---
+function updateStatsDisplay() {
+    const gamesPlayedEl = document.getElementById('stats-games-played');
+    const gamesWonEl = document.getElementById('stats-games-won');
+    const winPercentEl = document.getElementById('stats-win-percentage');
+
+    if (gamesPlayedEl) gamesPlayedEl.textContent = totalGamesPlayed;
+    if (gamesWonEl) gamesWonEl.textContent = userWins;
+
+    if (winPercentEl) {
+        if (totalGamesPlayed > 0) {
+            const winPercentage = ((userWins / totalGamesPlayed) * 100).toFixed(1);
+            winPercentEl.textContent = `${winPercentage}%`;
+        } else {
+            winPercentEl.textContent = 'N/A';
+        }
+    }
+}
+
+
+function declareWinner(winnerIndex) {
+    const winnerName = gameState.players[winnerIndex]?.name ?? `Player ${winnerIndex + 1}`;
+    updateStatus(`${winnerName} won!`);
+    gameState.isGameOver = true;
+    gameState.winner = winnerIndex;
+
+    // --- Update stats if user won ---
+    if (winnerIndex === 0) {
+        userWins++;
+    }
+    updateStatsDisplay(); // Update display after win/loss
+
+    logDetailedTurn('game_end', { winner: winnerIndex });
+    // Optional: Keep detailed logging if needed for other purposes
+    allGamesDetailedLog.push(...currentGameDetailedLog);
+
+    const playButton = document.getElementById('play-button');
+    const passButton = document.getElementById('pass-button');
+    const clearButton = document.getElementById('clear-selection-button');
+    if (playButton) playButton.disabled = true;
+    if (passButton) passButton.disabled = true;
+    if (clearButton) clearButton.disabled = true;
+
+    updatePlayerHighlight(-1);
+    renderHands(gameState.players); // Show final hands
+}
 
 // --- Action Handlers ---
 function validateSelectedCardsCombo(cardsToCheck) { /* ... */ if (!cardsToCheck || cardsToCheck.length === 0) return { isValid: false, message: "No cards selected." }; const nWCs = cardsToCheck.filter(c => !c.isWild); if (nWCs.length === 0) return { isValid: false, message: "Cannot play only wild cards." }; const fRV = nWCs[0].value; const aSR = nWCs.every(c => c.value === fRV); if (!aSR) return { isValid: false, message: "Selected cards must be the same rank (or wildcards)." }; return { isValid: true, rankValue: fRV, quantity: cardsToCheck.length }; }
@@ -376,11 +426,16 @@ function initializeGame(showGamePage = true) {
     console.log("Initializing Swedish Kings...");
     updateStatus("Setting up game...");
 
+    // --- Increment Game Counter for Stats ---
+    totalGamesPlayed++;
+    updateStatsDisplay(); // Update stats on new game start
+
     dynamicP2Threshold = Math.random() < 0.5 ? 3 : 4;
     dynamicWildcardPassThreshold = Math.random() < 0.5 ? 0.40 : 0.50;
     dynamicRule4RankThreshold = Math.floor(Math.random() * 5) + 6; // 6-10
     console.log(`Game Settings: P2 <= ${dynamicP2Threshold}, Wild Pass > ${dynamicWildcardPassThreshold * 100}%, Rule 4 Rank < ${dynamicRule4RankThreshold}`);
 
+    // --- Game Log Counter ---
     gameCounter++;
     currentGameDetailedLog = [];
     logDetailedTurn('game_start', {
@@ -423,24 +478,56 @@ function initializeGame(showGamePage = true) {
 }
 
 
-// --- Updated Data Export Logic ---
-function formatAllLogsForSheet(logData) { if (!logData || logData.length === 0) return "No game logs recorded yet. Play some games first!";
-    const headers = [ "GameID", "Turn", "PlayerIndex", "PlayerName", "Action", "CardsPlayed", "Rank", "Quantity", "UsedWilds", "AIPlayStyle", "HandSizeBefore", "PassedListBefore", "LastPlayRank", "LastPlayQty", "Reason", "Winner", "P2Threshold", "WildPassThreshold", "Rule4RankThreshold" ]; // Added Rule4RankThreshold
-    const rows = logData.map(entry => {
-        const details = entry.details || {};
-        const cardsStr = details.cards ? `"${details.cards.map(c=>c.display).join(';').replace(/"/g, '""')}"` : '';
-        return [
-            entry.gameId, entry.turn, entry.playerIndex, `"${entry.playerName.replace(/"/g, '""')}"`, entry.action, cardsStr,
-            details.rank ?? '', details.qty ?? '', details.wilds ?? '', details.style ?? '', entry.handSizeBefore,
-            `"${entry.passedPlayersBefore?.join(';') ?? ''}"`, entry.lastPlayRank ?? '', entry.lastPlayQty ?? '',
-            `"${(details.reason ?? '').replace(/"/g, '""')}"`, details.winner ?? '',
-            details.p2Threshold ?? '', details.wildPassThreshold ?? '',
-            details.rule4RankThreshold ?? '' // Added data point
-        ].join(',');
-    });
-    return `${headers.join(',')}\n${rows.join('\n')}`;
-}
-function handleExportLogs() { /* ... */ const resultsTextArea = document.getElementById('exported-logs-textarea'); const exportButton = document.getElementById('export-logs-button'); if (!resultsTextArea || !exportButton) { console.error("Export control elements not found."); return; } exportButton.disabled = true; resultsTextArea.value = "Generating CSV data..."; setTimeout(() => { const csvData = formatAllLogsForSheet(allGamesDetailedLog); resultsTextArea.value = csvData; exportButton.disabled = false; console.log("Log export complete. Data displayed."); }, 50); }
+// --- REMOVED Data Export Logic ---
+// function formatAllLogsForSheet(logData) { ... } // Removed
+// function handleExportLogs() { ... } // Removed
+
 
 // --- Global Event Listeners ---
-document.addEventListener('DOMContentLoaded', () => { /* ... Unchanged ... */ initializeGame(false); showPage('rules-page'); const newGameButton = document.getElementById('new-game-button'); if (newGameButton) { newGameButton.addEventListener('click', () => initializeGame(true)); } else { console.error("New Game button not found"); } const playButton = document.getElementById('play-button'); const passButton = document.getElementById('pass-button'); const clearButton = document.getElementById('clear-selection-button'); const aiReasoningToggle = document.getElementById('ai-reasoning-toggle'); const gameBoard = document.getElementById('game-board'); if (playButton) { playButton.addEventListener('click', handlePlayAction); } else { console.error("Play button not found"); } if (passButton) { passButton.addEventListener('click', handlePassAction); } else { console.error("Pass button not found"); } if (clearButton) { clearButton.addEventListener('click', handleClearSelection); } else { console.error("Clear Selection button not found"); } if (aiReasoningToggle && gameBoard) { aiReasoningToggle.addEventListener('change', (event) => { if (event.target.checked) { gameBoard.classList.add('show-ai-reasoning'); console.log("AI Reasoning: Shown"); } else { gameBoard.classList.remove('show-ai-reasoning'); console.log("AI Reasoning: Hidden"); } }); } else { console.error("AI Reasoning Toggle or Game Board element not found."); } const exportButton = document.getElementById('export-logs-button'); if (exportButton) { exportButton.addEventListener('click', handleExportLogs); } else { console.error("Export button not found"); } const startGameButton = document.getElementById('start-game-button'); if (startGameButton) { startGameButton.addEventListener('click', () => showPage('game-page')); } else { console.error("Start Game button not found"); } const showRulesButton = document.getElementById('show-rules-button'); if (showRulesButton) { showRulesButton.addEventListener('click', () => showPage('rules-page')); } else { console.error("Show Rules button not found"); } });
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Reset stats on initial load ---
+    totalGamesPlayed = 0;
+    userWins = 0;
+    initializeGame(false); // Initialize game logic but don't increment counter yet
+    totalGamesPlayed = 0; // Reset counter after initial setup
+    updateStatsDisplay(); // Show 0s initially
+    showPage('rules-page');
+
+    const newGameButton = document.getElementById('new-game-button');
+    if (newGameButton) {
+        // Pass true to show game page and increment counter
+        newGameButton.addEventListener('click', () => initializeGame(true));
+    } else {
+        console.error("New Game button not found");
+    }
+
+    const playButton = document.getElementById('play-button');
+    const passButton = document.getElementById('pass-button');
+    const clearButton = document.getElementById('clear-selection-button');
+    const aiReasoningToggle = document.getElementById('ai-reasoning-toggle');
+    const gameBoard = document.getElementById('game-board');
+
+    if (playButton) { playButton.addEventListener('click', handlePlayAction); } else { console.error("Play button not found"); }
+    if (passButton) { passButton.addEventListener('click', handlePassAction); } else { console.error("Pass button not found"); }
+    if (clearButton) { clearButton.addEventListener('click', handleClearSelection); } else { console.error("Clear Selection button not found"); }
+    if (aiReasoningToggle && gameBoard) {
+        aiReasoningToggle.addEventListener('change', (event) => {
+            if (event.target.checked) {
+                gameBoard.classList.add('show-ai-reasoning'); console.log("AI Reasoning: Shown");
+            } else {
+                gameBoard.classList.remove('show-ai-reasoning'); console.log("AI Reasoning: Hidden");
+            }
+        });
+    } else {
+        console.error("AI Reasoning Toggle or Game Board element not found.");
+    }
+
+    // --- Remove Export Button Listener ---
+    // const exportButton = document.getElementById('export-logs-button');
+    // if (exportButton) { exportButton.addEventListener('click', handleExportLogs); } else { console.error("Export button not found"); }
+
+    const startGameButton = document.getElementById('start-game-button');
+    if (startGameButton) { startGameButton.addEventListener('click', () => showPage('game-page')); } else { console.error("Start Game button not found"); }
+    const showRulesButton = document.getElementById('show-rules-button');
+    if (showRulesButton) { showRulesButton.addEventListener('click', () => showPage('rules-page')); } else { console.error("Show Rules button not found"); }
+});
