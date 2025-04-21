@@ -10,7 +10,8 @@ const WILD_RANKS = ["2", "3", "Joker"];
 const ACE_VALUE = 14;
 const KING_VALUE = 13;
 const QUEEN_VALUE = 12;
-const JACK_VALUE = 11; // Added for clarity in AIStrategicPlay
+const JACK_VALUE = 11;
+const TEN_VALUE = 10; // Added for Rule 4 clarity
 const ROYAL_VALUE_THRESHOLD = 11; // J, Q, K, A
 const WILD_PENALTY = 5;
 const STARTING_ROUND_LOW_WILD_PENALTY = 20;
@@ -18,7 +19,7 @@ const AI_TURN_DELAY = 1000; // Keep this for turn pacing
 const AI_REASONING_DELAY = 300; // Short delay before showing reasoning
 const ROUND_END_DELAY = AI_TURN_DELAY * 2;
 const STANDARD_ROUND_END_DELAY = AI_TURN_DELAY * 1.5;
-const LOW_CARD_THRESHOLD_P2 = 3;
+// const LOW_CARD_THRESHOLD_P2 = 3; // Replaced by dynamicP2Threshold
 const FALLING_BEHIND_DIFF_P4 = 5; // Threshold for falling behind
 const LEAVE_ONE_CARD_PENALTY = 50;
 const AVG_SCORE_CATCHUP_THRESHOLD = 0.9;
@@ -26,6 +27,11 @@ const ENDGAME_THRESHOLD = 6;
 const ENDGAME_SINGLE_THRESHOLD = 2;
 const ENDGAME_UNNECESSARY_WILD_PENALTY = 15;
 const PLAYER_AREA_IDS = ['human-player', 'computer-1', 'computer-2'];
+const MIN_CARDS_FOR_WILD_PASS_RULE = 12; // For Rule 5
+
+// --- Dynamic Game Variables ---
+let dynamicP2Threshold; // Will be 3 or 4
+let dynamicWildcardPassThreshold; // Will be 0.40 or 0.50
 
 // --- Computer Player Names ---
 const COMPUTER_NAMES = [
@@ -86,7 +92,6 @@ function generateReasoningText(playStyle, chosenPlay = null, opponentHandSize = 
         const reasonCode = playStyle.substring(5);
         switch (reasonCode) {
             case 'no_valid': reason = "Passed: No valid plays were available."; break;
-            // case 'strategic': reason = "Passed: Decided to save stronger cards for later."; break; // Removed
             case 'confident': reason = "Passed: Had a valid play, but chose to pass while feeling confident."; break;
             case 'conservative': reason = "Passed: Had a valid play, but chose to pass to be more conservative."; break;
             case 'falling_behind': reason = "Passed: Could not find a suitable play to catch up."; break;
@@ -94,6 +99,8 @@ function generateReasoningText(playStyle, chosenPlay = null, opponentHandSize = 
             case 'no_4h_play_chosen': reason = "Passed: Error - Had 4♥ but couldn't select a valid play."; break;
             case 'invalid_win_forced_pass': reason = "Passed: Intended winning play was invalid (contained Ace/Wild)."; break;
             case 'internal_error': reason = "Passed: Internal error occurred during decision making."; break;
+            // NEW Pass Reason for Rule 5
+            case 'strategic_high_wild_usage': reason = `Passed: Considered play used too high % of available wildcards (Rule 5).`; break;
             default: reason = "Passed: No suitable play found based on current strategy.";
         }
     } else if (chosenPlay) {
@@ -105,19 +112,19 @@ function generateReasoningText(playStyle, chosenPlay = null, opponentHandSize = 
             case 'winning': reason = `Played ${playDesc}${wildInfo} to win the game!`; break;
             case 'penultimate': reason = `Played ${playDesc}${wildInfo} to set up a potential win next turn.`; break;
             case 'penultimate_lower_rank': reason = `Played lower rank ${playDesc}${wildInfo} to set up a potential win next turn.`; break;
-            case 'stop_opponent': reason = `Played ${playDesc}${wildInfo} aggressively as an opponent has few cards (${opponentHandSize}).`; break;
+            case 'stop_opponent': reason = `Played ${playDesc}${wildInfo} aggressively as an opponent has <= ${dynamicP2Threshold} cards.`; break; // Updated P2 text
             case 'falling_behind_with_wilds':
             case 'falling_behind_no_wilds': reason = `Played ${playDesc}${wildInfo} trying to reduce hand size (currently falling behind).`; break;
-            // **** UPDATED LINES ****
             case 'confident_with_wilds':
-            case 'confident_no_wilds': reason = `Played ${playDesc}${wildInfo} confidently while ahead or level.`; break;
-            // **** END UPDATED LINES ****
+            case 'confident_no_wilds': reason = `Played ${playDesc}${wildInfo} confidently while ahead or level.`; break; // Corrected confident text
             case 'conservative_with_wilds':
             case 'conservative_no_wilds': reason = `Played ${playDesc}${wildInfo} cautiously, trying to save stronger cards.`; break;
             case 'conservative_rank_plus_3': reason = `Played ${playDesc}${wildInfo} as a safe, non-royal, non-wild +3 rank play.`; break;
             case 'confident_ace_start_swap_no_wild':
             case 'conservative_ace_start_swap_no_wild': reason = `Played ${playDesc}${wildInfo} instead of lowest single to avoid using it when starting with an Ace.`; break;
             case 'start_4h': reason = `Played ${playDesc}${wildInfo} to start the game (must include 4♥).`; break;
+            // Strategic Override Reasons
+            case 'strategic_override_low_no_wild': reason = `Strategically Played: ${playDesc}${wildInfo} (Rule 4: Play low non-wild below 10).`; break; // NEW Rule 4 reason
             case 'strategic_override_ace': reason = `Strategically Played: ${playDesc}${wildInfo} (Rule 1: 2+ Aces, override pass on single).`; break;
             case 'strategic_override_low_wild': reason = `Strategically Played: ${playDesc}${wildInfo} (Rule 2: 3+ Wilds, override pass on low double).`; break;
             case 'strategic_override_second_low': reason = `Strategically Played: ${playDesc}${wildInfo} (Rule 3: Ace Start, override lowest single).`; break;
@@ -126,6 +133,7 @@ function generateReasoningText(playStyle, chosenPlay = null, opponentHandSize = 
     }
     return reason;
 }
+
 
 // --- Rendering Functions ---
 function renderCard(card) { const cE = document.createElement('div'); cE.classList.add('card'); cE.dataset.cardId = card.id; cE.textContent = card.display; cE.style.color = (card.suit === 'hearts' || card.suit === 'diamonds') ? 'red' : 'black'; if (card.rank === 'Joker') cE.style.fontWeight = 'bold'; return cE; }
@@ -235,48 +243,18 @@ function countDistinctNonWildRanks(hand) { const ranks = new Set(); hand.forEach
 function getNonWildCardsByRank(hand) { return hand.filter(c => !c.isWild).reduce((acc, c) => { if (!acc[c.rank]) acc[c.rank] = []; acc[c.rank].push(c); return acc; }, {}); }
 function findHighestNonWildCardId(hand) { let highestValue = -1; let highestId = null; hand.forEach(card => { if (!card.isWild && card.value > highestValue) { highestValue = card.value; highestId = card.id; } }); return highestId; }
 function findLowestNonWildCardId(hand) { let lowestValue = Infinity; let lowestId = null; hand.forEach(card => { if (!card.isWild && card.value < lowestValue) { lowestValue = card.value; lowestId = card.id; } }); return lowestId; }
-
-/**
- * Finds the second lowest non-wild card and returns it as a single-card play object.
- * Returns null if there isn't a second lowest non-wild card or it's not a valid play on its own.
- */
 function findSecondLowestNonWildSinglePlay(hand, lastPlayedHand) {
     const nonWilds = hand.filter(c => !c.isWild);
-    if (nonWilds.length < 2) {
-        return null; // Need at least two non-wild cards
-    }
-    // Sort non-wilds by value, then suit (like sortHand)
-    nonWilds.sort((a, b) => {
-        const vA = a.value || 0;
-        const vB = b.value || 0;
-        if (vA !== vB) return vA - vB;
-        const sO = { hearts: 1, diamonds: 2, clubs: 3, spades: 4, null: 5 };
-        return (sO[a.suit] || sO.null) - (sO[b.suit] || sO.null);
-    });
-
+    if (nonWilds.length < 2) { return null; }
+    nonWilds.sort((a, b) => { const vA = a.value || 0; const vB = b.value || 0; if (vA !== vB) return vA - vB; const sO = { hearts: 1, diamonds: 2, clubs: 3, spades: 4, null: 5 }; return (sO[a.suit] || sO.null) - (sO[b.suit] || sO.null); });
     const secondLowestCard = nonWilds[1];
-    const potentialPlay = {
-        cards: [secondLowestCard],
-        rankValue: secondLowestCard.value,
-        quantity: 1,
-        usesWilds: false
-    };
-
-    // Check if this single card is a valid play against the last hand
-    if (isPlayValidVsLast(potentialPlay, lastPlayedHand)) {
-        return potentialPlay;
-    } else {
-        // Even if the second lowest exists, it might not be a valid *play*
-        // e.g., if last play was 2x 5s, playing a single 6 isn't valid.
-        // Also handles the case where it's the start of the round (lastPlayedHand is null)
-        if (!lastPlayedHand) return potentialPlay; // Always valid to start with a single
-        return null;
-    }
+    const potentialPlay = { cards: [secondLowestCard], rankValue: secondLowestCard.value, quantity: 1, usesWilds: false };
+    if (isPlayValidVsLast(potentialPlay, lastPlayedHand)) { return potentialPlay; }
+    else { if (!lastPlayedHand) return potentialPlay; return null; }
 }
-
 function filterAndSortLowestP5P6(candidates, rankLimit, royalLimit, avoidHighestId, lowestCardIdInHand, lastRankValue) { if (!candidates || candidates.length === 0) return []; const lowestCardPlays = candidates.filter(play => lowestCardIdInHand !== null && play.cards.some(c => c.id === lowestCardIdInHand)); const lowestCardPlayIds = new Set(lowestCardPlays.map(p => p.cards.map(c => c.id).sort().join())); const filteredStandardPlays = candidates.filter(play => { const playId = play.cards.map(c => c.id).sort().join(); if (lowestCardPlayIds.has(playId)) { return false; } const rankCheck = lastRankValue === -1 || play.rankValue <= lastRankValue + rankLimit; const highestCheck = avoidHighestId === null || !play.cards.some(c => c.id === avoidHighestId); const royalCheck = !(lastRankValue >= QUEEN_VALUE && play.rankValue > lastRankValue + royalLimit); return rankCheck && highestCheck && royalCheck; }); const combinedCandidates = [...lowestCardPlays, ...filteredStandardPlays]; if (combinedCandidates.length > 0) { combinedCandidates.sort((a, b) => { if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue; const wildsA = a.cards.filter(c => c.isWild).length; const wildsB = b.cards.filter(c => c.isWild).length; if (wildsA !== wildsB) return wildsA - wildsB; return b.quantity - a.quantity; }); return combinedCandidates; } return []; }
 
-// --- chooseBestPlay Function - ADDED GUARD CLAUSE ---
+// --- Updated chooseBestPlay ---
 function chooseBestPlay(validPlays, playerIndex) {
     if (!validPlays || validPlays.length === 0) {
         console.log(`AI-${playerIndex}: No valid plays possible.`);
@@ -320,14 +298,16 @@ function chooseBestPlay(validPlays, playerIndex) {
         console.log(`AI-${playerIndex}: (${playStyle}) Neither constructed penultimate play was valid.`);
     }
 
-    // P2: Stop Opponent Winning
-    if (minOpponentHandSize <= LOW_CARD_THRESHOLD_P2) {
-        playStyle = 'stop_opponent'; console.log(`AI-${playerIndex}: Priority 2 (${playStyle}): Opponent has <= ${LOW_CARD_THRESHOLD_P2} cards. Playing highest score.`);
+    // P2: Stop Opponent Winning (Uses dynamic threshold)
+    // **** UPDATED LINE ****
+    if (minOpponentHandSize <= dynamicP2Threshold) {
+        playStyle = 'stop_opponent'; console.log(`AI-${playerIndex}: Priority 2 (${playStyle}): Opponent has <= ${dynamicP2Threshold} cards. Playing highest score.`); // Used dynamic variable
         let P2Candidates = [...validPlays];
         P2Candidates.sort((a, b) => { let scoreA = a.rankValue - (a.usesWilds ? WILD_PENALTY : 0); let scoreB = b.rankValue - (b.usesWilds ? WILD_PENALTY : 0); if (scoreA !== scoreB) return scoreB - scoreA; if (a.quantity !== b.quantity) return b.quantity - a.quantity; return b.rankValue - b.rankValue; });
         if (P2Candidates.length > 0) { sortHand(P2Candidates[0].cards); return { chosenPlay: P2Candidates[0], playStyle: playStyle }; }
         console.log(`AI-${playerIndex}: (${playStyle}) No valid plays found.`); passReasonDetails = { message: `Could not stop opponent (min hand ${minOpponentHandSize}).` }; return { chosenPlay: null, playStyle: `pass_${playStyle}`, passReasonDetails };
     }
+    // **** END UPDATED LINE ****
 
     // P4: Falling Behind
     if (aiHandLength >= leadingPlayerHandSize + FALLING_BEHIND_DIFF_P4) {
@@ -345,16 +325,30 @@ function chooseBestPlay(validPlays, playerIndex) {
 
     // Store potential lowest play info for Strategic Rule 3
     let potentialLowestPlay = null;
+    let bestOverallValidPlay = null; // Store the best play AI *could* make if forced
     if (validPlays.length > 0) {
         const sortedByRank = [...validPlays].sort((a, b) => a.rankValue - b.rankValue);
         potentialLowestPlay = {
             rankValue: sortedByRank[0].rankValue,
             quantity: sortedByRank[0].quantity,
+            usesWilds: sortedByRank[0].usesWilds, // Added for Rule 5
+            cards: sortedByRank[0].cards, // Added for Rule 5
             isLowestRank: sortedByRank[0].rankValue === lowestCardRank,
             id: sortedByRank[0].cards.map(c => c.id).sort().join('-') // Simple identifier
         };
-        passReasonDetails.lowestPlayInfo = potentialLowestPlay; // Add to pass details regardless
+        passReasonDetails.lowestPlayInfo = potentialLowestPlay;
+        // Find the best overall play (used if P5/P6 don't find anything but AI needs to consider passing on *something*)
+        // Simple heuristic: lowest rank, fewest wilds, highest quantity
+         bestOverallValidPlay = [...validPlays].sort((a, b) => {
+             if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue;
+             const wildsA = a.cards.filter(c => c.isWild).length;
+             const wildsB = b.cards.filter(c => c.isWild).length;
+             if (wildsA !== wildsB) return wildsA - wildsB;
+             return b.quantity - a.quantity;
+         })[0];
     }
+    passReasonDetails.initialCandidate = bestOverallValidPlay; // Default candidate if P5/P6 fail
+
 
     // P5: Confident
     if (myAvgScore >= tableAvgScore) {
@@ -364,114 +358,57 @@ function chooseBestPlay(validPlays, playerIndex) {
         if (filteredList && filteredList.length > 0) {
             console.log(`AI-${playerIndex}: (${playStyle}) Found ${filteredList.length} suitable plays (rank<=+4, royal<=+2, OR contains lowest card). Sorted by rank, then wilds, then quantity.`);
             P5Choice = filteredList[0];
+            passReasonDetails.initialCandidate = P5Choice; // Update candidate with the one chosen by this logic
             playStyle = `${playStyle}${P5Choice.usesWilds ? '_with_wilds' : '_no_wilds'}`;
-
-            const startingRound = !lastPlayedHand;
-            const holdingAce = aiHand.some(c => c.rank === 'A');
-            const lowestIsSingle = P5Choice.rankValue === lowestCardRank && P5Choice.quantity === 1;
-
+            const startingRound = !lastPlayedHand; const holdingAce = aiHand.some(c => c.rank === 'A'); const lowestIsSingle = P5Choice.rankValue === lowestCardRank && P5Choice.quantity === 1;
             if (startingRound && holdingAce && lowestIsSingle) {
-                console.log(`AI-${playerIndex}: (${playStyle}) Applying Ace Start + Lowest Single rule.`);
-                let foundAlternative = false;
-                for (let i = 1; i < filteredList.length; i++) {
-                    if (!filteredList[i].usesWilds) {
-                        P5Choice = filteredList[i];
-                        playStyle = 'confident_ace_start_swap_no_wild'; // Use specific style
-                        console.log(`AI-${playerIndex}: (${playStyle}) Found non-wild second best play. Switching choice.`);
-                        foundAlternative = true;
-                        break;
-                    }
-                }
+                console.log(`AI-${playerIndex}: (${playStyle}) Applying Ace Start + Lowest Single rule.`); let foundAlternative = false;
+                for (let i = 1; i < filteredList.length; i++) { if (!filteredList[i].usesWilds) { P5Choice = filteredList[i]; playStyle = 'confident_ace_start_swap_no_wild'; console.log(`AI-${playerIndex}: (${playStyle}) Found non-wild second best play. Switching choice.`); foundAlternative = true; break; } }
                 if (!foundAlternative) { console.log(`AI-${playerIndex}: (${playStyle}) Lowest was single, but no non-wild alternative found. Sticking with lowest single.`); }
             }
-             // If we decided to play, return it
-             sortHand(P5Choice.cards);
-             return { chosenPlay: P5Choice, playStyle: playStyle };
+             sortHand(P5Choice.cards); return { chosenPlay: P5Choice, playStyle: playStyle };
         } else {
-            // If no suitable play found within confident limits, prepare to pass
             console.log(`AI-${playerIndex}: (${playStyle}) No suitable plays found within confident limits. Passing.`);
             passReasonDetails.message = `Confident state, but no play within rank/royal limits.`;
-            passReasonDetails.initialCandidate = potentialLowestPlay; // Pass info about the best valid play found overall
+            // passReasonDetails.initialCandidate already set to bestOverallValidPlay
             return { chosenPlay: null, playStyle: `pass_${playStyle}`, passReasonDetails };
         }
     }
     // P6: Conservative
     else {
         playStyle = 'conservative'; console.log(`AI-${playerIndex}: Priority 6 (${playStyle}): Avg Score ${myAvgScore.toFixed(1)} < Table Avg ${tableAvgScore.toFixed(1)}.`);
-        let P6Choice = null;
-        let rankPlus3Play = null;
-
+        let P6Choice = null; let rankPlus3Play = null;
         if (lastRankValue !== -1) {
-            const potentialRank = lastRankValue + 3;
-            const rankPlus3Candidates = validPlays.filter(play => play.rankValue === potentialRank && !play.usesWilds && play.rankValue < ROYAL_VALUE_THRESHOLD);
-            if (rankPlus3Candidates.length > 0) {
-                rankPlus3Candidates.sort((a, b) => b.quantity - a.quantity);
-                rankPlus3Play = rankPlus3Candidates[0];
-                console.log(`AI-${playerIndex}: (${playStyle}) Found valid Rank+3 play (no wilds/royals):`, rankPlus3Play.cards.map(c=>c.display));
-            }
+            const potentialRank = lastRankValue + 3; const rankPlus3Candidates = validPlays.filter(play => play.rankValue === potentialRank && !play.usesWilds && play.rankValue < ROYAL_VALUE_THRESHOLD);
+            if (rankPlus3Candidates.length > 0) { rankPlus3Candidates.sort((a, b) => b.quantity - a.quantity); rankPlus3Play = rankPlus3Candidates[0]; console.log(`AI-${playerIndex}: (${playStyle}) Found valid Rank+3 play (no wilds/royals):`, rankPlus3Play.cards.map(c=>c.display)); }
         }
-
-        let filteredList = filterAndSortLowestP5P6(validPlays, 2, 1, highestCardId, lowestCardId, lastRankValue);
-        let combinedP6Candidates = [];
+        let filteredList = filterAndSortLowestP5P6(validPlays, 2, 1, highestCardId, lowestCardId, lastRankValue); let combinedP6Candidates = [];
         if (filteredList && filteredList.length > 0) { combinedP6Candidates.push(...filteredList); }
-        if (rankPlus3Play) {
-            const rankPlus3PlayId = rankPlus3Play.cards.map(c => c.id).sort().join();
-            if (!combinedP6Candidates.some(p => p.cards.map(c => c.id).sort().join() === rankPlus3PlayId)) {
-                combinedP6Candidates.push(rankPlus3Play);
-                console.log(`AI-${playerIndex}: (${playStyle}) Added Rank+3 play to candidate list.`);
-            }
-        }
-
+        if (rankPlus3Play) { const rankPlus3PlayId = rankPlus3Play.cards.map(c => c.id).sort().join(); if (!combinedP6Candidates.some(p => p.cards.map(c => c.id).sort().join() === rankPlus3PlayId)) { combinedP6Candidates.push(rankPlus3Play); console.log(`AI-${playerIndex}: (${playStyle}) Added Rank+3 play to candidate list.`); } }
         if (combinedP6Candidates.length > 0) {
-            combinedP6Candidates.sort((a, b) => {
-                if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue;
-                const wildsA = a.cards.filter(c => c.isWild).length;
-                const wildsB = b.cards.filter(c => c.isWild).length;
-                if (wildsA !== wildsB) return wildsA - wildsB;
-                return b.quantity - a.quantity;
-            });
+            combinedP6Candidates.sort((a, b) => { if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue; const wildsA = a.cards.filter(c => c.isWild).length; const wildsB = b.cards.filter(c => c.isWild).length; if (wildsA !== wildsB) return wildsA - wildsB; return b.quantity - a.quantity; });
             console.log(`AI-${playerIndex}: (${playStyle}) Found ${combinedP6Candidates.length} total suitable plays (rank<=+2, royal<=+1 OR contains lowest card OR is rank+3 no wild/royal). Sorted by rank, then wilds, then quantity.`);
             P6Choice = combinedP6Candidates[0];
+            passReasonDetails.initialCandidate = P6Choice; // Update candidate
             playStyle = `${playStyle}${P6Choice.usesWilds ? '_with_wilds' : '_no_wilds'}`;
-
-            if (P6Choice === rankPlus3Play) {
-                playStyle = 'conservative_rank_plus_3'; // Use specific style
-                console.log(`AI-${playerIndex}: (${playStyle}) Selected the special Rank+3 play.`);
-            }
-
-            const startingRound = !lastPlayedHand;
-            const holdingAce = aiHand.some(c => c.rank === 'A');
-            const isLowestRankPlay = P6Choice.rankValue === lowestCardRank;
-            const isSinglePlay = P6Choice.quantity === 1;
-
+            if (P6Choice === rankPlus3Play) { playStyle = 'conservative_rank_plus_3'; console.log(`AI-${playerIndex}: (${playStyle}) Selected the special Rank+3 play.`); }
+            const startingRound = !lastPlayedHand; const holdingAce = aiHand.some(c => c.rank === 'A'); const isLowestRankPlay = P6Choice.rankValue === lowestCardRank; const isSinglePlay = P6Choice.quantity === 1;
             if (startingRound && holdingAce && isLowestRankPlay && isSinglePlay) {
-                 console.log(`AI-${playerIndex}: (${playStyle}) Applying Ace Start + Lowest Single rule.`);
-                 let foundAlternative = false;
-                 for (let i = 1; i < combinedP6Candidates.length; i++) {
-                     if (!combinedP6Candidates[i].usesWilds) {
-                         P6Choice = combinedP6Candidates[i];
-                         playStyle = 'conservative_ace_start_swap_no_wild'; // Use specific style
-                         console.log(`AI-${playerIndex}: (${playStyle}) Found non-wild second best play. Switching choice.`);
-                         foundAlternative = true;
-                         break;
-                     }
-                 }
+                 console.log(`AI-${playerIndex}: (${playStyle}) Applying Ace Start + Lowest Single rule.`); let foundAlternative = false;
+                 for (let i = 1; i < combinedP6Candidates.length; i++) { if (!combinedP6Candidates[i].usesWilds) { P6Choice = combinedP6Candidates[i]; playStyle = 'conservative_ace_start_swap_no_wild'; console.log(`AI-${playerIndex}: (${playStyle}) Found non-wild second best play. Switching choice.`); foundAlternative = true; break; } }
                   if (!foundAlternative) { console.log(`AI-${playerIndex}: (${playStyle}) Lowest was single, but no non-wild alternative found. Sticking with lowest single.`); }
              }
-              // If we decided to play, return it
-             sortHand(P6Choice.cards);
-             return { chosenPlay: P6Choice, playStyle: playStyle };
+             sortHand(P6Choice.cards); return { chosenPlay: P6Choice, playStyle: playStyle };
          } else {
-             // If no suitable play found within conservative limits, prepare to pass
              console.log(`AI-${playerIndex}: (${playStyle}) No suitable plays found within conservative limits (including +3 check). Passing.`);
              passReasonDetails.message = `Conservative state, but no play within rank/royal/Rank+3 limits.`;
-             passReasonDetails.initialCandidate = potentialLowestPlay; // Pass info about the best valid play found overall
+             // passReasonDetails.initialCandidate already set to bestOverallValidPlay
              return { chosenPlay: null, playStyle: `pass_${playStyle}`, passReasonDetails };
          }
     }
 } // End chooseBestPlay
 
-// --- NEW handleAITurn (Replaces the old one) ---
+// --- Updated handleAITurn ---
 function handleAITurn(playerIndex) {
     const aiPlayer = gameState.players[playerIndex];
     if (!aiPlayer || !aiPlayer.hand) { // Guard clause
@@ -512,14 +449,13 @@ function handleAITurn(playerIndex) {
             const fourHPlays = plays.filter(p => p.cards.some(c => c.rank === '4' && c.suit === 'hearts'));
 
             if (fourHPlays.length > 0) {
-                // If multiple 4H plays, chooseBestPlay logic can refine it (e.g., play more cards if possible)
                 let { chosenPlay: bestFourHPlay, playStyle: fourHStyle } = chooseBestPlay(fourHPlays, playerIndex);
-                 chosenPlay = bestFourHPlay; // Assign to outer scope variable
-                 playStyle = 'start_4h'; // Override style for clarity
+                 chosenPlay = bestFourHPlay;
+                 playStyle = 'start_4h';
                  actionReason = generateReasoningText(playStyle, chosenPlay, minOpponentHandSizeForReasoning);
                  aiPlayer.lastReasoning = actionReason;
                  console.log(`AI (${playerName}) Reason: ${actionReason}`);
-                 gameState.isGameStarted = true; // Mark game as started
+                 gameState.isGameStarted = true;
             } else {
                  actionReason = generateReasoningText('pass_no_4h_play_chosen');
                  aiPlayer.lastReasoning = actionReason;
@@ -541,89 +477,112 @@ function handleAITurn(playerIndex) {
 
             console.log(`AI (${playerName}) initial decision: Style=${playStyle}, Play=${chosenPlay ? chosenPlay.cards.map(c=>c.display).join(',') : 'None'}, ExecutePass=${executePass}`);
 
-            // --- *** NEW AIStrategicPlay LOGIC *** ---
-            // Only applies if the initial decision was to pass AND based on confident/conservative logic
+            // --- *** UPDATED AIStrategicPlay LOGIC *** ---
             if (executePass && (playStyle.startsWith('pass_confident') || playStyle.startsWith('pass_conservative'))) {
                 console.log(`AI (${playerName}) reconsidering pass based on AIStrategicPlay rules.`);
                 let strategicOverride = false; // Flag if an override occurs
+                let passConfirmedByRule5 = false; // Flag if Rule 5 confirms the pass
                 const passDetails = initialDecision.passReasonDetails || {};
-                const initialCandidate = passDetails.initialCandidate; // The best play AI found but decided not to play
+                const initialCandidate = passDetails.initialCandidate; // The play AI considered passing on
 
-                // Rule 1: 2+ Aces, pass on single -> Play single Ace
-                const aceCount = playerHand.filter(c => c.rank === 'A').length;
-                // Check if the play AI considered passing on was a single card
-                const initialPassWasOnSingle = initialCandidate?.quantity === 1;
-                if (!strategicOverride && aceCount >= 2 && initialPassWasOnSingle ) {
-                   const singleAcePlay = validPlays.find(p => p.quantity === 1 && p.rankValue === ACE_VALUE);
-                   if (singleAcePlay) {
-                       console.log(`AI (${playerName}) Strategic Play Rule 1: Has ${aceCount} Aces, initial pass was on single. Playing single Ace.`);
-                       chosenPlay = singleAcePlay;
-                       executePass = false;
-                       strategicOverride = true;
-                       playStyle = 'strategic_override_ace';
-                   }
-                }
-
-                // Rule 2: 3+ Wilds, pass on double, last play < Jack -> Play lowest + wild
-                const wildCount = playerHand.filter(c => c.isWild).length;
-                // Check if the play AI considered passing on was two cards
-                const initialPassWasOnDouble = initialCandidate?.quantity === 2;
-                const lastRankValue = gameState.lastPlayedHand?.rankValue ?? -1; // Use -1 if no last hand
-                if (!strategicOverride && wildCount >= 3 && lastRankValue < JACK_VALUE && initialPassWasOnDouble ) {
-                    const nonWildsSorted = playerHand.filter(c => !c.isWild).sort((a, b) => a.value - b.value);
-                    const lowestNonWildCard = nonWildsSorted.length > 0 ? nonWildsSorted[0] : null;
-                    const availableWild = playerHand.find(c => c.isWild);
-                    if (lowestNonWildCard && availableWild) {
-                        const lowestPlusWildPlay = {
-                            cards: [lowestNonWildCard, availableWild],
-                            rankValue: lowestNonWildCard.value,
-                            quantity: 2,
-                            usesWilds: true
-                        };
-                        // Must re-validate this constructed play
-                        if (isPlayValidVsLast(lowestPlusWildPlay, gameState.lastPlayedHand)) {
-                             console.log(`AI (${playerName}) Strategic Play Rule 2: Has ${wildCount} wilds, last play < J, passed on double. Playing lowest non-wild (${lowestNonWildCard.display}) + wild (${availableWild.display}).`);
-                             chosenPlay = lowestPlusWildPlay;
-                             executePass = false;
-                             strategicOverride = true;
-                             playStyle = 'strategic_override_low_wild';
-                        } else {
-                            console.log(`AI (${playerName}) Strategic Play Rule 2 triggered, but constructed play ${lowestNonWildCard.display}+${availableWild.display} is not valid vs last play.`);
+                // --- Rule 5 Check (Early Pass Confirmation) ---
+                if (initialCandidate && initialCandidate.usesWilds && playerHand.length >= MIN_CARDS_FOR_WILD_PASS_RULE) {
+                    const totalWildsInHand = playerHand.filter(c => c.isWild).length;
+                    const wildsUsedInCandidate = initialCandidate.cards.filter(c => c.isWild).length;
+                    if (totalWildsInHand > 0) {
+                        const wildcardUsageRatio = wildsUsedInCandidate / totalWildsInHand;
+                        console.log(`AI (${playerName}) Rule 5 Check: Hand Size=${playerHand.length}, Candidate Wilds=${wildsUsedInCandidate}, Total Wilds=${totalWildsInHand}, Ratio=${wildcardUsageRatio.toFixed(2)}, Threshold=${dynamicWildcardPassThreshold}`);
+                        if (wildcardUsageRatio > dynamicWildcardPassThreshold) {
+                             console.log(`AI (${playerName}) Strategic Pass Rule 5: High wildcard usage (${(wildcardUsageRatio * 100).toFixed(0)}% > ${(dynamicWildcardPassThreshold * 100).toFixed(0)}%) in considered play. Confirming PASS.`);
+                             passConfirmedByRule5 = true;
+                             playStyle = 'pass_strategic_high_wild_usage'; // Update reason code
                         }
                     }
                 }
 
-                // Rule 3: Starting round, has Ace, lowest is single -> Play second lowest non-wild single
-                const isStartingRound = !gameState.lastPlayedHand;
-                const hasAce = playerHand.some(c => c.rank === 'A');
-                const lowestPlayInfo = passDetails.lowestPlayInfo; // Get info about the absolute lowest play
-                 // Check if the play AI considered passing on was indeed the lowest single
-                const initialChoiceWasLowestSingle = initialCandidate && lowestPlayInfo &&
-                                                    initialCandidate.id === lowestPlayInfo.id &&
-                                                    initialCandidate.quantity === 1;
-
-                if (!strategicOverride && isStartingRound && hasAce && initialChoiceWasLowestSingle ) {
-                    const secondLowestPlay = findSecondLowestNonWildSinglePlay(playerHand, gameState.lastPlayedHand);
-                    if (secondLowestPlay) {
-                        console.log(`AI (${playerName}) Strategic Play Rule 3: Starting round with Ace, lowest choice was single. Playing second lowest single (${secondLowestPlay.cards[0].display}).`);
-                        chosenPlay = secondLowestPlay;
+                // --- Check Override Rules ONLY if Rule 5 didn't confirm pass ---
+                if (!passConfirmedByRule5) {
+                    // --- Rule 4: Play low non-wild below 10 ---
+                    const lowNonWildPlays = validPlays.filter(play => !play.usesWilds && play.rankValue < TEN_VALUE);
+                    if (lowNonWildPlays.length > 0) {
+                        lowNonWildPlays.sort((a, b) => { // Sort by rank, then quantity (desc)
+                           if (a.rankValue !== b.rankValue) return a.rankValue - b.rankValue;
+                           return b.quantity - a.quantity;
+                        });
+                        const chosenRule4Play = lowNonWildPlays[0];
+                        console.log(`AI (${playerName}) Strategic Play Rule 4: Found valid non-wild play below 10 (${chosenRule4Play.cards.map(c=>c.display).join(',')}). Overriding PASS.`);
+                        chosenPlay = chosenRule4Play;
                         executePass = false;
                         strategicOverride = true;
-                        playStyle = 'strategic_override_second_low';
-                    } else {
-                         console.log(`AI (${playerName}) Strategic Play Rule 3 triggered, but no valid second lowest single play found.`);
+                        playStyle = 'strategic_override_low_no_wild';
                     }
-                }
 
-                // Update reason generation based on override
-                if (strategicOverride) {
+                    // --- Rule 1: 2+ Aces, pass on single -> Play single Ace ---
+                    const aceCount = playerHand.filter(c => c.rank === 'A').length;
+                    const initialPassWasOnSingle = initialCandidate?.quantity === 1;
+                    if (!strategicOverride && aceCount >= 2 && initialPassWasOnSingle ) {
+                       const singleAcePlay = validPlays.find(p => p.quantity === 1 && p.rankValue === ACE_VALUE);
+                       if (singleAcePlay) {
+                           console.log(`AI (${playerName}) Strategic Play Rule 1: Has ${aceCount} Aces, initial pass was on single. Playing single Ace.`);
+                           chosenPlay = singleAcePlay;
+                           executePass = false;
+                           strategicOverride = true;
+                           playStyle = 'strategic_override_ace';
+                       }
+                    }
+
+                    // --- Rule 2: 3+ Wilds, pass on double, last play < Jack -> Play lowest + wild ---
+                    const wildCount = playerHand.filter(c => c.isWild).length;
+                    const initialPassWasOnDouble = initialCandidate?.quantity === 2;
+                    const lastRankValue = gameState.lastPlayedHand?.rankValue ?? -1;
+                    if (!strategicOverride && wildCount >= 3 && lastRankValue < JACK_VALUE && initialPassWasOnDouble ) {
+                        const nonWildsSorted = playerHand.filter(c => !c.isWild).sort((a, b) => a.value - b.value);
+                        const lowestNonWildCard = nonWildsSorted.length > 0 ? nonWildsSorted[0] : null;
+                        const availableWild = playerHand.find(c => c.isWild);
+                        if (lowestNonWildCard && availableWild) {
+                            const lowestPlusWildPlay = { cards: [lowestNonWildCard, availableWild], rankValue: lowestNonWildCard.value, quantity: 2, usesWilds: true };
+                            if (isPlayValidVsLast(lowestPlusWildPlay, gameState.lastPlayedHand)) {
+                                 console.log(`AI (${playerName}) Strategic Play Rule 2: Has ${wildCount} wilds, last play < J, passed on double. Playing lowest non-wild (${lowestNonWildCard.display}) + wild (${availableWild.display}).`);
+                                 chosenPlay = lowestPlusWildPlay;
+                                 executePass = false;
+                                 strategicOverride = true;
+                                 playStyle = 'strategic_override_low_wild';
+                            } else {
+                                console.log(`AI (${playerName}) Strategic Play Rule 2 triggered, but constructed play ${lowestNonWildCard.display}+${availableWild.display} is not valid vs last play.`);
+                            }
+                        }
+                    }
+
+                    // --- Rule 3: Starting round, has Ace, lowest is single -> Play second lowest non-wild single ---
+                    const isStartingRound = !gameState.lastPlayedHand;
+                    const hasAce = playerHand.some(c => c.rank === 'A');
+                    const lowestPlayInfo = passDetails.lowestPlayInfo;
+                    const initialChoiceWasLowestSingle = initialCandidate && lowestPlayInfo &&
+                                                        initialCandidate.id === lowestPlayInfo.id &&
+                                                        initialCandidate.quantity === 1;
+                    if (!strategicOverride && isStartingRound && hasAce && initialChoiceWasLowestSingle ) {
+                        const secondLowestPlay = findSecondLowestNonWildSinglePlay(playerHand, gameState.lastPlayedHand);
+                        if (secondLowestPlay) {
+                            console.log(`AI (${playerName}) Strategic Play Rule 3: Starting round with Ace, lowest choice was single. Playing second lowest single (${secondLowestPlay.cards[0].display}).`);
+                            chosenPlay = secondLowestPlay;
+                            executePass = false;
+                            strategicOverride = true;
+                            playStyle = 'strategic_override_second_low';
+                        } else {
+                             console.log(`AI (${playerName}) Strategic Play Rule 3 triggered, but no valid second lowest single play found.`);
+                        }
+                    }
+                } // End check for !passConfirmedByRule5
+
+                // Update reasoning generation based on override or confirmed pass
+                if (strategicOverride) { // An override TO PLAY occurred
                     actionReason = generateReasoningText(playStyle, chosenPlay, minOpponentHandSizeForReasoning);
                     aiPlayer.lastReasoning = actionReason;
-                     console.log(`AI (${playerName}) Strategic Override Applied. New decision: Play ${chosenPlay.cards.map(c=>c.display).join(',')}. Reason: ${actionReason}`);
-                 } else {
-                     console.log(`AI (${playerName}) No strategic override applied. Proceeding with pass.`);
-                     // Ensure pass reason uses the original style if no override
-                      actionReason = generateReasoningText(initialDecision.playStyle, null, minOpponentHandSizeForReasoning); // Use the original pass style
+                    console.log(`AI (${playerName}) Strategic Override Applied. New decision: Play ${chosenPlay.cards.map(c=>c.display).join(',')}. Reason: ${actionReason}`);
+                 } else { // Pass is confirmed (either by Rule 5 or no override applied)
+                     console.log(`AI (${playerName}) No strategic override to PLAY applied or Rule 5 confirmed pass. Proceeding with pass.`);
+                     // Ensure pass reason uses the updated style if Rule 5 triggered, otherwise original
+                      actionReason = generateReasoningText(playStyle, null, minOpponentHandSizeForReasoning);
                       aiPlayer.lastReasoning = actionReason;
                  }
             } else if (chosenPlay && !executePass) {
@@ -640,289 +599,161 @@ function handleAITurn(playerIndex) {
         }
 
         // --- FINAL ACTION PREPARATION ---
-        // Check for invalid winning play (Ace or Wild on final hand) - applies even after strategic override
         if (!executePass && chosenPlay) {
             const isWinningPlayAttempt = playerHand.length === chosenPlay.quantity;
             if (isWinningPlayAttempt) {
                 const isInvalidWinningPlay = chosenPlay.cards.some(card => card.value === ACE_VALUE || card.isWild);
                 if (isInvalidWinningPlay) {
                     console.log(`AI (${playerName}) chose invalid winning hand [${chosenPlay.cards.map(c=>c.display).join(', ')}]. Forcing pass.`);
-                    chosenPlay = null; // Nullify the play
-                    executePass = true; // Force pass flag
-                    playStyle = 'pass_invalid_win_forced_pass'; // Update style
-                    actionReason = generateReasoningText(playStyle); // Update reason
-                    aiPlayer.lastReasoning = actionReason; // Update displayed reason
-                    // Log the forced pass separately if needed, or rely on the pass block below
+                    chosenPlay = null; executePass = true; playStyle = 'pass_invalid_win_forced_pass'; actionReason = generateReasoningText(playStyle); aiPlayer.lastReasoning = actionReason;
                 }
             }
         }
 
         // --- Execute Play or Pass ---
         if (!executePass && chosenPlay) {
-             // Play the chosen hand
              console.log(`AI (${playerName}) executing play: ${chosenPlay.cards.map(c=>c.display).join(', ')}. Style: ${playStyle}.`);
-             sortHand(chosenPlay.cards); // Sort for consistency
+             sortHand(chosenPlay.cards);
              logDetailedTurn('play', { cards: chosenPlay.cards.map(c => c.display).join(';'), rank: chosenPlay.rankValue, qty: chosenPlay.quantity, wilds: chosenPlay.usesWilds, style: playStyle });
              gameState.lastPlayedHand = { ...chosenPlay, playerIndex: playerIndex };
-             trackPlayedCards(chosenPlay); // Track non-wild cards played
-
-             // Remove cards from hand
+             trackPlayedCards(chosenPlay);
              const playedCardIds = new Set(chosenPlay.cards.map(card => card.id));
              gameState.players[playerIndex].hand = playerHand.filter(card => !playedCardIds.has(card.id));
-
-             logPlay(playerIndex, chosenPlay); // Add to visual log
-             renderPlayArea(gameState.lastPlayedHand);
-             renderHands(gameState.players); // Update display
-
-             // Check for win
-             if (gameState.players[playerIndex].hand.length === 0) {
-                 declareWinner(playerIndex);
-                 return; // Stop further processing
-             }
-
-             // Check for Ace play round win
+             logPlay(playerIndex, chosenPlay); renderPlayArea(gameState.lastPlayedHand); renderHands(gameState.players);
+             if (gameState.players[playerIndex].hand.length === 0) { declareWinner(playerIndex); return; }
              if (chosenPlay.rankValue === ACE_VALUE) {
-                 logEvent(`Aces played by ${playerName} - Round Over!`, "round-end");
-                 logDetailedTurn('round_end', { reason: 'ace', winner: playerIndex });
-                 updateStatus(`${playerName} played Aces...`);
-                 setTimeout(() => { startNextRound(playerIndex); }, ROUND_END_DELAY);
-                 return; // Stop further processing
+                 logEvent(`Aces played by ${playerName} - Round Over!`, "round-end"); logDetailedTurn('round_end', { reason: 'ace', winner: playerIndex }); updateStatus(`${playerName} played Aces...`);
+                 setTimeout(() => { startNextRound(playerIndex); }, ROUND_END_DELAY); return;
              }
-
-             advanceTurn(); // Move to the next player
-
+             advanceTurn();
         } else {
-            // Execute Pass
              console.log(`AI (${playerName}) executing pass. Reason: ${actionReason}. Final pass style code: ${playStyle}`);
-             // Ensure the logged reason reflects the final decision (could be original pass or forced pass)
-             logDetailedTurn('pass', { reason: playStyle.startsWith('pass_') ? playStyle.substring(5) : playStyle }); // Use the final playStyle code
-             if (!gameState.passedPlayers.includes(playerIndex)) {
-                 gameState.passedPlayers.push(playerIndex);
-                 logEvent(`${playerName} passed.`, 'pass');
-             }
-             renderHands(gameState.players); // Update visual state (e.g., grey out)
-             updateStatus(`${playerName} passed. Advancing turn...`);
-
-            // Check if round is over due to pass
+             logDetailedTurn('pass', { reason: playStyle.startsWith('pass_') ? playStyle.substring(5) : playStyle });
+             if (!gameState.passedPlayers.includes(playerIndex)) { gameState.passedPlayers.push(playerIndex); logEvent(`${playerName} passed.`, 'pass'); }
+             renderHands(gameState.players); updateStatus(`${playerName} passed. Advancing turn...`);
             if (checkRoundOver()) {
                 const roundWinnerIndex = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1;
-                if (roundWinnerIndex !== -1 && gameState.players[roundWinnerIndex]) { // Check winner exists
-                    const winnerName = gameState.players[roundWinnerIndex].name;
-                    logEvent(`${winnerName} wins the round (opponents passed).`, 'round-end');
-                    logDetailedTurn('round_end', { reason: 'pass', winner: roundWinnerIndex });
-                    updateStatus(`Round over! ${winnerName} wins...`);
+                if (roundWinnerIndex !== -1 && gameState.players[roundWinnerIndex]) {
+                    const winnerName = gameState.players[roundWinnerIndex].name; logEvent(`${winnerName} wins the round (opponents passed).`, 'round-end'); logDetailedTurn('round_end', { reason: 'pass', winner: roundWinnerIndex }); updateStatus(`Round over! ${winnerName} wins...`);
                     setTimeout(() => { startNextRound(roundWinnerIndex); }, STANDARD_ROUND_END_DELAY);
-                } else {
-                    console.error(`Round over after AI pass, but couldn't determine winner! Last play owner: ${roundWinnerIndex}`);
-                    advanceTurn(); // Try to advance anyway, might cause issues
-                }
-            } else {
-                advanceTurn(); // Round not over, just advance
-            }
+                } else { console.error(`Round over after AI pass, but couldn't determine winner! Last play owner: ${roundWinnerIndex}`); advanceTurn(); }
+            } else { advanceTurn(); }
         }
 
     }, AI_REASONING_DELAY); // End of setTimeout
 }
+
 
 // --- Round and Turn Management ---
 function checkRoundOver() { const activePlayers = gameState.players.length; const neededToPass = activePlayers - 1; const result = gameState.passedPlayers.length >= neededToPass; console.log(`--- checkRoundOver: Passed players: [${gameState.passedPlayers.join(', ')}] (${gameState.passedPlayers.length}). Needed: ${neededToPass}. Result: ${result} ---`); return result; }
 function startNextRound(winnerIndex) {
     console.log(`>>> startNextRound called for winner: Player ${winnerIndex} <<<`);
     if (gameState.isGameOver) return;
-    // Ensure winnerIndex is valid before accessing player
-    if (winnerIndex < 0 || winnerIndex >= gameState.players.length || !gameState.players[winnerIndex]) {
-        console.error(`startNextRound: Invalid winnerIndex ${winnerIndex}`);
-        return;
-    }
+    if (winnerIndex < 0 || winnerIndex >= gameState.players.length || !gameState.players[winnerIndex]) { console.error(`startNextRound: Invalid winnerIndex ${winnerIndex}`); return; }
     const winnerName = gameState.players[winnerIndex].name;
     console.log(`Starting next round. Winner: ${winnerName}`);
     gameState.passedPlayers = [];
-    gameState.players.forEach(p => { if(p && p.id !== 1) p.lastReasoning = ""; }); // Added null check for p
+    gameState.players.forEach(p => { if(p && p.id !== 1) p.lastReasoning = ""; });
     gameState.lastPlayedHand = null;
     renderPlayArea(null);
-    const logArea = document.getElementById('play-log');
-    if (logArea) logArea.innerHTML = ''; else console.error("Play log area not found for clearing.");
+    const logArea = document.getElementById('play-log'); if (logArea) logArea.innerHTML = '';
     gameState.currentPlayerIndex = winnerIndex;
     renderHands(gameState.players);
     updateStatus(`Round won by ${winnerName}. Starting next round. It's ${winnerName}'s turn.`);
     if (winnerIndex > 0) {
-        if (gameState.players[winnerIndex]) { // Check again before setting reasoning
-             gameState.players[winnerIndex].lastReasoning = "Thinking...";
-             renderHands(gameState.players);
-        }
+        if (gameState.players[winnerIndex]) { gameState.players[winnerIndex].lastReasoning = "Thinking..."; renderHands(gameState.players); }
         console.log(`Scheduling AI turn for ${winnerName} (starting new round) in ${ROUND_END_DELAY}ms`);
-        setTimeout(() => {
-            if (gameState.currentPlayerIndex === winnerIndex && !gameState.isGameOver) {
-                console.log(`--- Timeout executing for startNextRound winner ${winnerName} ---`);
-                handleAITurn(winnerIndex);
-            } else {
-                console.log(`--- Timeout skipped for startNextRound winner ${winnerName} (state changed) ---`);
-            }
-        }, ROUND_END_DELAY);
+        setTimeout(() => { if (gameState.currentPlayerIndex === winnerIndex && !gameState.isGameOver) { handleAITurn(winnerIndex); } else { console.log(`Timeout skipped for startNextRound winner ${winnerName} (state changed)`); } }, ROUND_END_DELAY);
     }
 }
 function advanceTurn() {
     console.log(`--- advanceTurn called. Current player: ${gameState.currentPlayerIndex} ---`);
     if (gameState.isGameOver) { console.log("advanceTurn: Game is over, returning."); return; }
-    // gameState.turnCount++; // Turn count incremented in handleAITurn/handlePlayAction now
-    let nextPlayerIndex = gameState.currentPlayerIndex;
-    let loopGuard = 0;
-    const initialIndex = gameState.currentPlayerIndex;
+    let nextPlayerIndex = gameState.currentPlayerIndex; let loopGuard = 0; const initialIndex = gameState.currentPlayerIndex;
     do {
-        nextPlayerIndex = (nextPlayerIndex + 1) % gameState.players.length;
-        loopGuard++;
-        console.log(`advanceTurn loop: Checking index ${nextPlayerIndex}. Passed: ${gameState.passedPlayers.includes(nextPlayerIndex)}. Guard: ${loopGuard}`);
+        nextPlayerIndex = (nextPlayerIndex + 1) % gameState.players.length; loopGuard++; console.log(`advanceTurn loop: Checking index ${nextPlayerIndex}. Passed: ${gameState.passedPlayers.includes(nextPlayerIndex)}. Guard: ${loopGuard}`);
         if (loopGuard > gameState.players.length * 2) { console.error("Infinite loop detected in advanceTurn! Breaking."); updateStatus("Error: Turn advancement loop detected."); return; }
         if (nextPlayerIndex === initialIndex && loopGuard > gameState.players.length) {
             console.error("advanceTurn looped back to start without finding next player. Round should be over?");
-            if(checkRoundOver()){
-                const rWI = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1;
-                if(rWI !== -1 && rWI < gameState.players.length && gameState.players[rWI]) { // Check validity of rWI
-                    console.log(`Round over detected in advanceTurn loop. Starting next round for winner ${rWI}`);
-                    startNextRound(rWI);
-                } else {
-                     console.error(`Round over state detected in advanceTurn loop, but winner index ${rWI} is invalid or not found.`);
-                     updateStatus("Error: Could not determine round winner.");
-                }
-            } else {
-                console.error("advanceTurn loop detected, but checkRoundOver is false?");
-                updateStatus("Error: Turn advancement failed.");
-            }
+            if(checkRoundOver()){ const rWI = gameState.lastPlayedHand ? gameState.lastPlayedHand.playerIndex : -1; if(rWI !== -1 && rWI < gameState.players.length && gameState.players[rWI]) { startNextRound(rWI); } else { console.error(`Round over state detected in advanceTurn loop, but winner index ${rWI} is invalid or not found.`); updateStatus("Error: Could not determine round winner."); } }
+            else { console.error("advanceTurn loop detected, but checkRoundOver is false?"); updateStatus("Error: Turn advancement failed."); }
             return;
         }
     } while (gameState.passedPlayers.includes(nextPlayerIndex));
-
     console.log(`advanceTurn: Next player determined: ${nextPlayerIndex}`);
     gameState.currentPlayerIndex = nextPlayerIndex;
-
-    if (nextPlayerIndex < 0 || nextPlayerIndex >= gameState.players.length || !gameState.players[nextPlayerIndex]) {
-        console.error(`advanceTurn: Determined invalid nextPlayerIndex ${nextPlayerIndex}`);
-        updateStatus("Error: Invalid next player.");
-        return;
-    }
-
+    if (nextPlayerIndex < 0 || nextPlayerIndex >= gameState.players.length || !gameState.players[nextPlayerIndex]) { console.error(`advanceTurn: Determined invalid nextPlayerIndex ${nextPlayerIndex}`); updateStatus("Error: Invalid next player."); return; }
     const nextPlayer = gameState.players[gameState.currentPlayerIndex];
     updateStatus(`It's ${nextPlayer.name}'s turn.`);
-    renderHands(gameState.players); // Render immediately to show highlight
-
-    if (gameState.currentPlayerIndex > 0) { // If AI's turn
-        if (gameState.players[gameState.currentPlayerIndex]) { // Check player exists
-            gameState.players[gameState.currentPlayerIndex].lastReasoning = "Thinking..."; // Set thinking state
-            renderHands(gameState.players); // Show thinking state
-        }
+    renderHands(gameState.players);
+    if (gameState.currentPlayerIndex > 0) {
+        if (gameState.players[gameState.currentPlayerIndex]) { gameState.players[gameState.currentPlayerIndex].lastReasoning = "Thinking..."; renderHands(gameState.players); }
         console.log(`Scheduling AI turn for ${nextPlayer.name} in ${AI_TURN_DELAY}ms`);
-        setTimeout(() => {
-            if (gameState.currentPlayerIndex === nextPlayer.id - 1
-                && !gameState.isGameOver
-                && gameState.players[gameState.currentPlayerIndex])
-            {
-                console.log(`--- Timeout executing for AI ${nextPlayer.name} ---`);
-                handleAITurn(gameState.currentPlayerIndex);
-            } else {
-                console.log(`--- Timeout skipped for AI ${nextPlayer.name} (state changed: Current: ${gameState.currentPlayerIndex}, Expected: ${nextPlayer.id - 1}, GameOver: ${gameState.isGameOver}, Player Exists: ${!!gameState.players[nextPlayer.id - 1]}) ---`);
-            }
-        }, AI_TURN_DELAY);
-    } else {
-        console.log("It's the Human player's turn.");
-    }
+        setTimeout(() => { if (gameState.currentPlayerIndex === nextPlayer.id - 1 && !gameState.isGameOver && gameState.players[gameState.currentPlayerIndex]) { handleAITurn(gameState.currentPlayerIndex); } else { console.log(`Timeout skipped for AI ${nextPlayer.name} (state changed)`); } }, AI_TURN_DELAY);
+    } else { console.log("It's the Human player's turn."); }
 }
 
 
-// --- Game Initialization ---
+// --- Updated Game Initialization ---
 function initializeGame(showGamePage = true) {
     console.log("Initializing Swedish Kings...");
     updateStatus("Setting up game...");
+
+    // Set dynamic variables for this game
+    dynamicP2Threshold = Math.random() < 0.5 ? 3 : 4;
+    dynamicWildcardPassThreshold = Math.random() < 0.5 ? 0.40 : 0.50;
+    console.log(`Game Settings: P2 Threshold <= ${dynamicP2Threshold}, Wildcard Pass Threshold > ${dynamicWildcardPassThreshold * 100}%`);
+
     gameCounter++;
     currentGameDetailedLog = [];
-    logDetailedTurn('game_start');
+    logDetailedTurn('game_start', { p2Threshold: dynamicP2Threshold, wildPassThreshold: dynamicWildcardPassThreshold }); // Log dynamic values
+
     let availableNames = [...COMPUTER_NAMES];
     let nameIndex1 = Math.floor(Math.random() * availableNames.length);
-    gameState.players[1].name = availableNames[nameIndex1];
-    availableNames.splice(nameIndex1, 1);
+    gameState.players[1].name = availableNames[nameIndex1]; availableNames.splice(nameIndex1, 1);
     let nameIndex2 = Math.floor(Math.random() * availableNames.length);
     gameState.players[2].name = availableNames[nameIndex2];
     console.log(`Assigned names: P1=${gameState.players[1].name}, P2=${gameState.players[2].name}`);
-    gameState.deck = createDeck();
-    shuffleDeck(gameState.deck);
-    gameState.players.forEach(p => { if(p) { p.hand = []; if (p.id !== 1) p.lastReasoning = ""; }}); // Added null check
-    selectedCards = [];
-    gameState.lastPlayedHand = null;
-    gameState.passedPlayers = [];
-    gameState.isGameOver = false;
-    gameState.winner = null;
-    gameState.isGameStarted = false;
-    gameState.turnCount = 0;
-    gameState.playedCards = {};
-    dealCards(gameState.deck, gameState.players);
-    console.log("Cards dealt.");
-    PLAYER_AREA_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('player-wins'); el.classList.remove('player-passed'); } });
-    let sPF = false;
-    gameState.currentPlayerIndex = -1; // Reset before finding
-    for (let i = 0; i < gameState.players.length; i++) {
-        if (gameState.players[i] && gameState.players[i].hand && gameState.players[i].hand.some(c => c.rank === '4' && c.suit === 'hearts')) {
-            gameState.currentPlayerIndex = i;
-            sPF = true;
-            break;
-        }
-    }
-    if (!sPF || gameState.currentPlayerIndex === -1) {
-        console.error("CRITICAL ERROR: 4 of Hearts not found or starting player index invalid! Defaulting to Player 0.");
-        gameState.currentPlayerIndex = 0;
-         if (!gameState.players[0]) {
-             console.error("CRITICAL ERROR: Player 0 does not exist after defaulting. Stopping initialization.");
-             updateStatus("Error: Failed to initialize game.");
-             return;
-         }
-    }
-
-    renderHands(gameState.players);
-    renderPlayArea(null);
+    gameState.deck = createDeck(); shuffleDeck(gameState.deck);
+    gameState.players.forEach(p => { if(p) { p.hand = []; if (p.id !== 1) p.lastReasoning = ""; }});
+    selectedCards = []; gameState.lastPlayedHand = null; gameState.passedPlayers = [];
+    gameState.isGameOver = false; gameState.winner = null; gameState.isGameStarted = false;
+    gameState.turnCount = 0; gameState.playedCards = {};
+    dealCards(gameState.deck, gameState.players); console.log("Cards dealt.");
+    PLAYER_AREA_IDS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('player-wins', 'player-passed'); } });
+    let sPF = false; gameState.currentPlayerIndex = -1;
+    for (let i = 0; i < gameState.players.length; i++) { if (gameState.players[i] && gameState.players[i].hand && gameState.players[i].hand.some(c => c.rank === '4' && c.suit === 'hearts')) { gameState.currentPlayerIndex = i; sPF = true; break; } }
+    if (!sPF || gameState.currentPlayerIndex === -1) { console.error("CRITICAL ERROR: 4 of Hearts not found! Defaulting to Player 0."); gameState.currentPlayerIndex = 0; if (!gameState.players[0]) { console.error("CRITICAL ERROR: Player 0 missing after default. Stopping."); updateStatus("Error: Init failed."); return; } }
+    renderHands(gameState.players); renderPlayArea(null);
     const logArea = document.getElementById('play-log'); if (logArea) logArea.innerHTML = '';
     const pB = document.getElementById('play-button'); const passB = document.getElementById('pass-button'); const clearB = document.getElementById('clear-selection-button');
     if (pB) pB.disabled = false; if (passB) passB.disabled = false; if (clearB) clearB.disabled = false;
-
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-    if (!currentPlayer) {
-         console.error(`CRITICAL ERROR: Current player index ${gameState.currentPlayerIndex} is invalid after initialization.`);
-         updateStatus("Error: Failed to set starting player.");
-         return;
-    }
+    if (!currentPlayer) { console.error(`CRITICAL ERROR: Start index ${gameState.currentPlayerIndex} invalid.`); updateStatus("Error: Failed player set."); return; }
     const sN = currentPlayer.name;
-
     updateStatus(`Game started. ${sN}'s turn. Must play 4♥.`);
     console.log(`Game ready. Starting player index: ${gameState.currentPlayerIndex} (${sN})`);
     if (showGamePage) { showPage('game-page'); }
     if (gameState.currentPlayerIndex > 0) {
-        if (gameState.players[gameState.currentPlayerIndex]) {
-             gameState.players[gameState.currentPlayerIndex].lastReasoning = "Thinking...";
-             renderHands(gameState.players);
-        }
+        if (gameState.players[gameState.currentPlayerIndex]) { gameState.players[gameState.currentPlayerIndex].lastReasoning = "Thinking..."; renderHands(gameState.players); }
         console.log(`Scheduling initial AI turn for ${sN} in ${AI_TURN_DELAY}ms`);
-        setTimeout(() => {
-            const startingAIPlayer = gameState.players[gameState.currentPlayerIndex];
-            if (gameState.currentPlayerIndex > 0
-                && startingAIPlayer && gameState.currentPlayerIndex === (startingAIPlayer.id - 1)
-                && !gameState.isGameOver)
-            {
-                 handleAITurn(gameState.currentPlayerIndex);
-            } else {
-                console.log(`Initial AI turn for P${gameState.currentPlayerIndex+1} skipped as state changed.`);
-            }
-        }, AI_TURN_DELAY);
+        setTimeout(() => { const startingAIPlayer = gameState.players[gameState.currentPlayerIndex]; if (gameState.currentPlayerIndex > 0 && startingAIPlayer && gameState.currentPlayerIndex === (startingAIPlayer.id - 1) && !gameState.isGameOver) { handleAITurn(gameState.currentPlayerIndex); } else { console.log(`Initial AI turn for P${gameState.currentPlayerIndex+1} skipped (state changed).`); } }, AI_TURN_DELAY);
     }
 }
 
 
 // --- Data Export Logic ---
-function formatAllLogsForSheet(logData) { if (!logData || logData.length === 0) return "No game logs recorded yet. Play some games first!"; const headers = [ "GameID", "Turn", "PlayerIndex", "PlayerName", "Action", "CardsPlayed", "Rank", "Quantity", "UsedWilds", "AIPlayStyle", "HandSizeBefore", "PassedListBefore", "LastPlayRank", "LastPlayQty", "Reason", "Winner" ]; const rows = logData.map(entry => { const details = entry.details || {}; const cardsStr = details.cards ? `"${details.cards.replace(/"/g, '""')}"` : ''; return [ entry.gameId, entry.turn, entry.playerIndex, `"${entry.playerName.replace(/"/g, '""')}"`, entry.action, cardsStr, details.rank ?? '', details.qty ?? '', details.wilds ?? '', details.style ?? '', entry.handSizeBefore, `"${entry.passedPlayersBefore?.join(';') ?? ''}"`, entry.lastPlayRank ?? '', entry.lastPlayQty ?? '', details.reason ?? '', details.winner ?? '' ].join(','); }); return `${headers.join(',')}\n${rows.join('\n')}`; }
+function formatAllLogsForSheet(logData) { if (!logData || logData.length === 0) return "No game logs recorded yet. Play some games first!"; const headers = [ "GameID", "Turn", "PlayerIndex", "PlayerName", "Action", "CardsPlayed", "Rank", "Quantity", "UsedWilds", "AIPlayStyle", "HandSizeBefore", "PassedListBefore", "LastPlayRank", "LastPlayQty", "Reason", "Winner", "P2Threshold", "WildPassThreshold" ]; const rows = logData.map(entry => { const details = entry.details || {}; const cardsStr = details.cards ? `"${details.cards.replace(/"/g, '""')}"` : ''; return [ entry.gameId, entry.turn, entry.playerIndex, `"${entry.playerName.replace(/"/g, '""')}"`, entry.action, cardsStr, details.rank ?? '', details.qty ?? '', details.wilds ?? '', details.style ?? '', entry.handSizeBefore, `"${entry.passedPlayersBefore?.join(';') ?? ''}"`, entry.lastPlayRank ?? '', entry.lastPlayQty ?? '', details.reason ?? '', details.winner ?? '', details.p2Threshold ?? '', // Added for logging
+        details.wildPassThreshold ?? '' // Added for logging
+         ].join(','); }); return `${headers.join(',')}\n${rows.join('\n')}`; }
 function handleExportLogs() { const resultsTextArea = document.getElementById('exported-logs-textarea'); const exportButton = document.getElementById('export-logs-button'); if (!resultsTextArea || !exportButton) { console.error("Export control elements not found."); return; } exportButton.disabled = true; resultsTextArea.value = "Generating CSV data..."; setTimeout(() => { const csvData = formatAllLogsForSheet(allGamesDetailedLog); resultsTextArea.value = csvData; exportButton.disabled = false; console.log("Log export complete. Data displayed."); }, 50); }
 
 // --- Global Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
-    initializeGame(false);
-    showPage('rules-page');
+    initializeGame(false); // Initialize once to set dynamic vars, but don't show game page yet
+    showPage('rules-page'); // Start on rules page
     const newGameButton = document.getElementById('new-game-button');
-    if (newGameButton) { newGameButton.addEventListener('click', () => initializeGame(true)); }
+    if (newGameButton) { newGameButton.addEventListener('click', () => initializeGame(true)); } // Re-initialize when clicked
     else { console.error("New Game button not found"); }
     const playButton = document.getElementById('play-button');
     const passButton = document.getElementById('pass-button');
