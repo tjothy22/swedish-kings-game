@@ -652,6 +652,7 @@ function showPage(pageIdToShow) {
 
 /**
  * Handles clicks on cards in the human player's hand.
+ * MODIFIED: Deselection now only removes the clicked card.
  * @param {Event} event - The click event object.
  */
 function handleCardClick(event) {
@@ -670,24 +671,22 @@ function handleCardClick(event) {
     const clickedCardObject = gameState.players[0]?.hand?.find(c => c.id === clickedCardId);
     if (!clickedCardObject) return;
 
-    const rankToMatch = clickedCardObject.rank;
-    const isClickedCardWild = clickedCardObject.isWild;
     const isClickedCardSelected = selectedCards.some(c => c.id === clickedCardId);
 
-    if (isClickedCardWild) {
-        // Toggle selection for wildcards individually
-        if (isClickedCardSelected) {
-            selectedCards = selectedCards.filter(c => c.id !== clickedCardId);
-        } else {
-            selectedCards.push(clickedCardObject);
-        }
+    if (isClickedCardSelected) {
+        // --- MODIFIED BEHAVIOR ---
+        // If the clicked card is already selected, *only* deselect that specific card.
+        selectedCards = selectedCards.filter(c => c.id !== clickedCardId);
     } else {
-        // Select/deselect all cards of the same non-wild rank
-        if (isClickedCardSelected) {
-            // Deselect all cards of this rank
-            selectedCards = selectedCards.filter(c => c.rank !== rankToMatch);
+        // --- ORIGINAL SELECTION BEHAVIOR ---
+        // If the clicked card is *not* selected:
+        const isClickedCardWild = clickedCardObject.isWild;
+        if (isClickedCardWild) {
+            // Select wildcards individually
+            selectedCards.push(clickedCardObject);
         } else {
-            // Select all cards of this rank (that aren't already selected - though this case is unlikely)
+            // Select all cards of the same non-wild rank
+            const rankToMatch = clickedCardObject.rank;
             const cardsOfSameRank = gameState.players[0].hand.filter(
                 card => !card.isWild && card.rank === rankToMatch
             );
@@ -703,6 +702,7 @@ function handleCardClick(event) {
     renderHands(); // Re-render hands to show selection changes
     console.log("Selected cards:", selectedCards.map(c => c.display).join(', '));
 }
+
 
 /**
  * Handles the click of the "Clear Selection" button.
