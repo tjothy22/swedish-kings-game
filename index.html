@@ -9,144 +9,192 @@
 <body>
     <div class="title-area">
         <h1>Swedish Kings</h1>
-        </div>
-
-    <div id="rules-page" class="page-container" style="display: block;">
-        <h2>How to Play Swedish Kings</h2>
-
-        <div class="rules-content">
-            <h3>Objective</h3>
-            <p>Be the first player to get rid of all your cards.</p>
-
-            <h3>Setup</h3>
-            <ul>
-                <li>Uses a standard 52-card deck plus <strong>two Jokers</strong> (54 cards total).</li>
-                <li>Cards are dealt out as evenly as possible to 3 players (You, Computer 1, Computer 2).</li>
-                <li>The player holding the <strong>4 of Hearts (4♥)</strong> starts the first round.</li>
-            </ul>
-
-            <h3>Card Ranks & Wildcards</h3>
-            <ul>
-                <li>Cards rank from 4 (low) up to Ace (high): <strong>4, 5, 6, 7, 8, 9, 10, J, Q, K, A</strong>.</li>
-                <li><strong>Jokers, 2s, and 3s</strong> are wildcards. They can represent any card rank (4-A) but not a specific suit.</li>
-                <li>When playing wildcards with non-wild cards, the non-wild cards determine the rank of the hand.</li>
-                <li>You cannot play *only* wildcards.</li>
-            </ul>
-
-            <h3>Gameplay</h3>
-            <ol>
-                <li>The starting player must play a hand that includes the 4♥.</li>
-                <li>Subsequent players must play a hand that:
-                    <ul>
-                        <li>Has the <strong>same number of cards OR MORE</strong> than the previous hand played.</li>
-                        <li>Has a <strong>higher rank</strong> than the previous hand played.</li>
-                    </ul>
-                </li>
-                <li>You can play singles, pairs, three-of-a-kind, etc. (e.g., single 5, pair of 8s, three Jacks).</li>
-                <li>Wildcards can be used to complete sets (e.g., 8♥ + Joker counts as two 8s).</li>
-            </ol>
-
-            <h3>Passing & Rounds</h3>
-            <ul>
-                <li>If you cannot or choose not to beat the previous hand, you must **Pass**.</li>
-                <li>Once you pass, you are out for the rest of that specific round sequence.</li>
-                <li>A round sequence ends when all players but one have passed.</li>
-                <li>The last player to successfully play a hand wins the round and starts the next round by playing any card(s) they wish.</li>
-            </ul>
-
-             <h3>Ace Rule</h3>
-            <ul>
-                <li>Playing Aces (any number) is a special move.</li>
-                <li>If you play Aces, you **immediately win the current round**, regardless of previous plays.</li>
-                <li>You then start the next round.</li>
-            </ul>
-
-            <h3>Winning the Game</h3>
-            <ul>
-                <li>The first player to empty their hand wins the game.</li>
-                <li><strong>Important:</strong> Your final play (the one that empties your hand) **cannot** contain any Aces or Wildcards.</li>
-            </ul>
-        </div>
-
-        <button id="start-game-button" class="nav-button">Play Game!</button>
     </div>
 
-    <div id="game-page" class="page-container" style="display: none;">
+    <nav id="main-nav">
+        <div id="nav-buttons-container">
+            <div id="nav-mode-selection" class="nav-button-set" style="display: none;">
+                </div>
+            <div id="nav-rules" class="nav-button-set" style="display: none;">
+                <button id="nav-rules-to-3p" class="nav-button">3 Player Game</button>
+                <button id="nav-rules-to-1v1" class="nav-button">1 vs 1 Game</button>
+                <button id="nav-rules-to-mode" class="nav-button">Choose Mode</button>
+            </div>
+            <div id="nav-3player" class="nav-button-set" style="display: none;">
+                <button id="nav-3p-new" class="nav-button">New Game</button>
+                <button id="nav-3p-to-1v1" class="nav-button">1 vs 1 Game</button>
+                <button id="nav-3p-to-rules" class="nav-button">Rules</button>
+            </div>
+            <div id="nav-1v1" class="nav-button-set" style="display: none;">
+                 <button id="nav-1v1-new" class="nav-button">New Game</button>
+                 <button id="nav-1v1-to-3p" class="nav-button">3 Player Game</button>
+                 <button id="nav-1v1-to-rules" class="nav-button">Rules</button>
+            </div>
+        </div>
+    </nav>
 
-        <div class="game-nav-buttons">
-             <button id="new-game-button">New Game</button>
-             <button id="show-rules-button" class="nav-button">Show Rules</button>
-             <div class="toggle-switch">
-                 <input type="checkbox" id="ai-reasoning-toggle">
-                 <label for="ai-reasoning-toggle">Show AI Reasoning</label>
+    <div class="main-content-area">
+
+        <div id="mode-selection-page" class="page-container" style="display: block;">
+            <h2>Choose Game Mode</h2>
+            <div class="mode-selection-buttons">
+                <button id="start-3player-button" class="nav-button mode-button">3 Players</button>
+                <button id="start-1v1-button" class="nav-button mode-button">1 vs 1</button>
+                <button id="show-rules-from-selection" class="nav-button mode-button">Rules</button>
+            </div>
+        </div>
+
+        <div id="rules-page" class="page-container" style="display: none;">
+            <h2>How to Play Swedish Kings</h2>
+            <div class="rules-content">
+                <h3>Objective</h3>
+                <p>Be the first player to get rid of all your cards.</p>
+                <h3>Game Modes</h3>
+                <ul>
+                    <li><strong>Standard (3 Players):</strong> You play against two computer opponents. Cards are dealt evenly (18 each).</li>
+                    <li><strong>1 vs 1:</strong> You play against one computer opponent. Each player is dealt 18 cards, with the 4♥ guaranteed to be in play. The remaining 18 cards are set aside.</li>
+                </ul>
+                <h3>Setup (Standard)</h3>
+                <ul>
+                    <li>Uses a standard 52-card deck plus <strong>two Jokers</strong> (54 cards total).</li>
+                    <li>Cards are dealt out evenly to 3 players (You, Computer 1, Computer 2).</li>
+                    <li>The player holding the <strong>4 of Hearts (4♥)</strong> starts the first round.</li>
+                </ul>
+                 <h3>Setup (1 vs 1)</h3>
+                <ul>
+                    <li>Uses a standard 52-card deck plus <strong>two Jokers</strong> (54 cards total).</li>
+                    <li>18 cards are dealt to you and 18 to the computer. The <strong>4 of Hearts (4♥)</strong> is guaranteed to be dealt to one player.</li>
+                     <li>The remaining 18 cards are not used in the game.</li>
+                    <li>The player holding the <strong>4 of Hearts (4♥)</strong> starts the first round.</li>
+                </ul>
+                <h3>Card Ranks & Wildcards</h3>
+                <ul>
+                    <li>Cards rank from 4 (low) up to Ace (high): <strong>4, 5, 6, 7, 8, 9, 10, J, Q, K, A</strong>.</li>
+                    <li><strong>Jokers, 2s, and 3s</strong> are wildcards. They can represent any card rank (4-A) but not a specific suit.</li>
+                    <li>When playing wildcards with non-wild cards, the non-wild cards determine the rank of the hand.</li>
+                    <li>You cannot play *only* wildcards.</li>
+                </ul>
+                <h3>Gameplay</h3>
+                <ol>
+                    <li>The starting player must play a hand that includes the 4♥.</li>
+                    <li>Subsequent players must play a hand that:
+                        <ul>
+                            <li>Has the <strong>same number of cards OR MORE</strong> than the previous hand played.</li>
+                            <li>Has a <strong>higher rank</strong> than the previous hand played.</li>
+                        </ul>
+                    </li>
+                    <li>You can play singles, pairs, three-of-a-kind, etc. (e.g., single 5, pair of 8s, three Jacks).</li>
+                    <li>Wildcards can be used to complete sets (e.g., 8♥ + Joker counts as two 8s).</li>
+                </ol>
+                <h3>Passing & Rounds</h3>
+                <ul>
+                    <li>If you cannot or choose not to beat the previous hand, you must **Pass**.</li>
+                    <li>Once you pass, you are out for the rest of that specific round sequence.</li>
+                    <li>A round sequence ends when all other players in the current game have passed.</li>
+                    <li>The last player to successfully play a hand wins the round and starts the next round by playing any card(s) they wish.</li>
+                </ul>
+                 <h3>Ace Rule</h3>
+                <ul>
+                    <li>Playing Aces (any number) is a special move.</li>
+                    <li>If you play Aces, you **immediately win the current round**, regardless of previous plays.</li>
+                    <li>You then start the next round.</li>
+                </ul>
+                <h3>Winning the Game</h3>
+                <ul>
+                    <li>The first player to empty their hand wins the game.</li>
+                    <li><strong>Important:</strong> Your final play (the one that empties your hand) **cannot** contain any Aces or Wildcards.</li>
+                </ul>
+            </div>
              </div>
-        </div>
 
-        <div id="game-board">
+        <div id="game-page-3player" class="page-container" style="display: none;">
+            <div class="toggle-switch game-toggle"> <input type="checkbox" id="ai-reasoning-toggle-3p" class="ai-reasoning-toggle">
+                 <label for="ai-reasoning-toggle-3p">Show AI Reasoning</label>
+             </div>
 
-            <div id="computer-1" class="player-area">
-                <h2>Computer 1</h2>
-                <div class="player-info">
-                    <span class="card-count">Cards: <span id="c1-count">0</span></span>
+            <div id="game-board-3player" class="game-board">
+                <div id="computer-1-3p" class="player-area computer-area">
+                    <h2 id="c1-name-3p">Computer 1</h2>
+                    <div class="player-info"><span class="card-count">Cards: <span id="c1-count-3p">0</span></span></div>
+                    <div class="hand" id="c1-hand-3p"></div>
+                    <div class="ai-reasoning" id="c1-reasoning-3p"><p>Thinking...</p></div>
                 </div>
-                <div class="hand" id="c1-hand"></div>
-                <div class="ai-reasoning" id="c1-reasoning">
-                    <p>Thinking...</p>
+                <div id="play-area-3p" class="play-area">
+                    <h2>Play Area</h2>
+                    <p>Status: <span id="status-message-3p">Game loading...</span></p>
+                    <div id="play-log-area-3p" class="play-log-area"><h3>Round Log:</h3><div id="play-log-3p" class="play-log"></div></div>
+                    <div id="last-played-area-3p" class="last-played-area"><h3>Last Play:</h3><div id="last-played-3p" class="last-played"></div><p id="last-played-description-3p" class="last-played-text"></p></div>
+                </div>
+                <div id="computer-2-3p" class="player-area computer-area">
+                    <h2 id="c2-name-3p">Computer 2</h2>
+                    <div class="player-info"><span class="card-count">Cards: <span id="c2-count-3p">0</span></span></div>
+                    <div class="hand" id="c2-hand-3p"></div>
+                    <div class="ai-reasoning" id="c2-reasoning-3p"><p>Thinking...</p></div>
+                </div>
+                <div id="human-player-3p" class="player-area human-player-area">
+                    <h2>Your Hand</h2>
+                    <div class="player-info"><span class="card-count">Cards: <span id="p1-count-3p">0</span></span></div>
+                    <div id="p1-hand-3p">
+                         <div class="hand-group-container"><label>Wilds:</label><div id="p1-hand-wilds-3p" class="hand hand-group"></div></div>
+                         <div class="hand-group-container"><label>Low Cards (4-10):</label><div id="p1-hand-low-3p" class="hand hand-group"></div></div>
+                         <div class="hand-group-container"><label>Royal Cards (J-A):</label><div id="p1-hand-royals-3p" class="hand hand-group"></div></div>
+                    </div>
+                    <div id="player-actions-3p" class="player-actions">
+                         <button id="play-button-3p" class="play-button">Play Selected</button>
+                         <button id="pass-button-3p" class="pass-button">Pass</button>
+                         <button id="clear-selection-button-3p" class="clear-selection-button">Clear Selection</button>
+                    </div>
                 </div>
             </div>
-
-            <div id="play-area">
-                <h2>Play Area</h2>
-                <p>Status: <span id="status-message">Game loading...</span></p>
-                <div id="play-log-area">
-                    <h3>Round Log:</h3>
-                    <div id="play-log"></div>
-                </div>
-                <div id="last-played-area">
-                    <h3>Last Play:</h3>
-                    <div id="last-played">
-                        </div>
-                     <p id="last-played-description" class="last-played-text"></p>
-                </div>
+            <div id="stats-controls-3p" class="stats-section">
+                <h2>Game Statistics (This Session)</h2>
+                <p>Games Played: <span id="stats-games-played">0</span></p>
+                <p>Games Won (You): <span id="stats-games-won">0</span></p>
+                <p>Win Percentage: <span id="stats-win-percentage">N/A</span></p>
             </div>
-
-            <div id="computer-2" class="player-area">
-                <h2>Computer 2</h2>
-                <div class="player-info">
-                    <span class="card-count">Cards: <span id="c2-count">0</span></span>
-                </div>
-                <div class="hand" id="c2-hand"></div>
-                <div class="ai-reasoning" id="c2-reasoning">
-                    <p>Thinking...</p>
-                </div>
-            </div>
-
-            <div id="human-player" class="player-area">
-                <h2>Your Hand</h2>
-                <div class="player-info">
-                    <span class="card-count">Cards: <span id="p1-count">0</span></span>
-                </div>
-                <div id="p1-hand">
-                     <div class="hand-group-container"><label>Wilds:</label><div id="p1-hand-wilds" class="hand hand-group"></div></div>
-                     <div class="hand-group-container"><label>Low Cards (4-10):</label><div id="p1-hand-low" class="hand hand-group"></div></div>
-                     <div class="hand-group-container"><label>Royal Cards (J-A):</label><div id="p1-hand-royals" class="hand hand-group"></div></div>
-                </div>
-                <div id="player-actions">
-                     <button id="play-button">Play Selected</button>
-                     <button id="pass-button">Pass</button>
-                     <button id="clear-selection-button">Clear Selection</button>
-                </div>
-            </div>
-
         </div>
 
-        <div id="stats-controls" class="stats-section">
-            <h2>Game Statistics (This Session)</h2>
-            <p>Games Played: <span id="stats-games-played">0</span></p>
-            <p>Games Won: <span id="stats-games-won">0</span></p>
-            <p>Win Percentage: <span id="stats-win-percentage">N/A</span></p>
+        <div id="game-page-1v1" class="page-container" style="display: none;">
+             <div class="toggle-switch game-toggle"> <input type="checkbox" id="ai-reasoning-toggle-1v1" class="ai-reasoning-toggle">
+                 <label for="ai-reasoning-toggle-1v1">Show AI Reasoning</label>
+             </div>
+
+            <div id="game-board-1v1" class="game-board game-board-1v1">
+                <div id="computer-1-1v1" class="player-area computer-area">
+                    <h2 id="c1-name-1v1">Computer</h2>
+                    <div class="player-info"><span class="card-count">Cards: <span id="c1-count-1v1">0</span></span></div>
+                    <div class="hand" id="c1-hand-1v1"></div>
+                    <div class="ai-reasoning" id="c1-reasoning-1v1"><p>Thinking...</p></div>
+                </div>
+                <div id="play-area-1v1" class="play-area">
+                    <h2>Play Area</h2>
+                    <p>Status: <span id="status-message-1v1">Game loading...</span></p>
+                    <div id="play-log-area-1v1" class="play-log-area"><h3>Round Log:</h3><div id="play-log-1v1" class="play-log"></div></div>
+                    <div id="last-played-area-1v1" class="last-played-area"><h3>Last Play:</h3><div id="last-played-1v1" class="last-played"></div><p id="last-played-description-1v1" class="last-played-text"></p></div>
+                </div>
+                <div id="human-player-1v1" class="player-area human-player-area">
+                    <h2>Your Hand</h2>
+                    <div class="player-info"><span class="card-count">Cards: <span id="p1-count-1v1">0</span></span></div>
+                    <div id="p1-hand-1v1">
+                         <div class="hand-group-container"><label>Wilds:</label><div id="p1-hand-wilds-1v1" class="hand hand-group"></div></div>
+                         <div class="hand-group-container"><label>Low Cards (4-10):</label><div id="p1-hand-low-1v1" class="hand hand-group"></div></div>
+                         <div class="hand-group-container"><label>Royal Cards (J-A):</label><div id="p1-hand-royals-1v1" class="hand hand-group"></div></div>
+                    </div>
+                    <div id="player-actions-1v1" class="player-actions">
+                         <button id="play-button-1v1" class="play-button">Play Selected</button>
+                         <button id="pass-button-1v1" class="pass-button">Pass</button>
+                         <button id="clear-selection-button-1v1" class="clear-selection-button">Clear Selection</button>
+                    </div>
+                </div>
+            </div>
+            <div id="stats-controls-1v1" class="stats-section">
+                 <h2>Game Statistics (This Session)</h2>
+                <p>Games Played: <span id="stats-games-played-1v1">0</span></p>
+                <p>Games Won (You): <span id="stats-games-won-1v1">0</span></p>
+                <p>Win Percentage: <span id="stats-win-percentage-1v1">N/A</span></p>
+            </div>
         </div>
-        </div>
-    <script src="game.js"></script>
+
+    </div> <script src="game.js"></script>
 </body>
 </html>

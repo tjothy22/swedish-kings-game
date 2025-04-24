@@ -1,82 +1,154 @@
 /* Basic body styling */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 5px; /* Further reduced padding */
+    padding: 0; /* Remove body padding, handle spacing internally */
     background-color: #3a6f3a;
     background-image: radial-gradient(ellipse at center, #5a8f5a 20%, #3a6f3a 100%);
     color: #333;
     margin: 0;
-    font-size: 0.9em; /* *** REDUCED base font size *** */
+    font-size: 0.9em;
 }
 
 /* Center title area */
-.title-area { text-align: center; margin-bottom: 10px; position: relative; padding-top: 5px;} /* Reduced margins */
-h1 { margin-bottom: 0.1em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); font-size: 1.6em; } /* *** REDUCED font size *** */
-h2 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #444; font-size: 1.0em;} /* *** REDUCED font size *** */
-h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; font-size: 0.75em; text-transform: uppercase; } /* *** REDUCED font size *** */
+.title-area {
+    text-align: center;
+    padding: 10px 0 5px 0; /* Adjust padding */
+    background-color: rgba(0,0,0,0.1); /* Optional: slight background for title */
+}
+h1 { margin: 0; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); font-size: 1.8em; } /* Slightly larger H1 */
+h2 { text-align: center; margin-top: 0.5em; margin-bottom: 0.5em; color: #444; font-size: 1.1em;} /* Adjusted H2 */
+h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; font-size: 0.75em; text-transform: uppercase; }
+
+/* --- Top Navigation Bar --- */
+#main-nav {
+    background-color: rgba(0, 0, 0, 0.2); /* Darker background for contrast */
+    padding: 8px 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 40px; /* Ensure space even if no buttons shown */
+    box-sizing: border-box;
+}
+
+.nav-button-set {
+    /* Styles for the button containers if needed, e.g., spacing */
+}
+
+#main-nav .nav-button { /* Style buttons specifically within the nav bar */
+    margin: 0 5px; /* Adjust spacing between nav buttons */
+    padding: 5px 10px; /* Slightly smaller padding for nav buttons */
+    font-size: 0.8em; /* Slightly smaller font */
+}
+
+/* --- Main Content Area --- */
+.main-content-area {
+    padding: 10px 5px; /* Add padding around the page content */
+}
 
 /* Page Container Styles */
 .page-container {
-    max-width: 850px; /* *** FURTHER REDUCED max-width *** */
-    margin: 0 auto; /* Center content */
-    padding: 8px; /* Reduced padding */
+    max-width: 850px;
+    margin: 0 auto; /* Keep centered */
+    padding: 15px; /* Increased padding inside containers */
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 6px;
+    box-sizing: border-box;
 }
+
+/* --- Mode Selection Page --- */
+#mode-selection-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 20px; }
+.mode-selection-buttons {
+    text-align: center;
+    padding: 20px 0;
+    display: flex; /* Use flexbox for equal sizing */
+    justify-content: center; /* Center buttons */
+    gap: 15px; /* Space between buttons */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+.mode-button {
+    flex: 1; /* Allow buttons to grow */
+    min-width: 150px; /* Minimum width */
+    max-width: 200px; /* Maximum width */
+    padding: 10px 15px !important; /* Larger padding */
+    font-size: 1em !important; /* Larger font */
+    margin: 5px !important; /* Reset margin for flex items */
+}
+
 
 /* Rules Page Specific Styles */
 #rules-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 12px; }
 .rules-content {
     background-color: rgba(255, 255, 255, 0.8);
-    padding: 12px; /* Reduced padding */
+    padding: 15px; /* Increased padding */
     border-radius: 5px;
-    margin-bottom: 12px;
+    margin-bottom: 15px; /* Increased margin */
     color: #333;
     text-align: left;
-    font-size: 0.9em; /* Slightly smaller rules text */
+    font-size: 0.9em;
 }
 .rules-content h3 {
-    color: #3a6f3a; border-bottom: 1px solid #3a6f3a; padding-bottom: 3px; margin-top: 10px; margin-bottom: 6px; text-align: left;
+    color: #3a6f3a; border-bottom: 1px solid #3a6f3a; padding-bottom: 3px; margin-top: 12px; margin-bottom: 8px; text-align: left;
 }
-.rules-content ul, .rules-content ol { margin-left: 16px; line-height: 1.45; }
-.rules-content ul li { margin-bottom: 3px; }
+.rules-content ul, .rules-content ol { margin-left: 18px; line-height: 1.5; } /* Adjusted spacing */
+.rules-content ul li { margin-bottom: 4px; }
 .rules-content strong { color: #c82333; }
 
-/* Button Styles */
-#new-game-button,
-#export-logs-button,
-#player-actions button,
-.nav-button {
-    padding: 6px 12px; /* *** REDUCED padding *** */
-    font-size: 0.85em; /* *** REDUCED font size *** */
+/* Button Styles (General - for non-nav buttons if any remain) */
+.play-button,     /* Use class for play buttons */
+.pass-button,     /* Use class for pass buttons */
+.clear-selection-button { /* Use class for clear buttons */
+    padding: 6px 12px;
+    font-size: 0.85em;
     font-weight: bold; margin: 3px 6px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 2px; cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
 }
-#player-actions #play-button { background-color: #4CAF50; background-image: linear-gradient(to bottom, #5cb85c, #449d44); border-color: #398439; }
-#player-actions #pass-button { background-color: #ff9800; background-image: linear-gradient(to bottom, #ffa726, #fb8c00); border-color: #e65100; }
-#player-actions #clear-selection-button { background-color: #9e9e9e; background-image: linear-gradient(to bottom, #bdbdbd, #757575); border-color: #616161; }
 
-#new-game-button { background-color: #dc3545; background-image: linear-gradient(to bottom, #d9534f, #c9302c); border-color: #ac2925; }
-#export-logs-button { background-color: #17a2b8; background-image: linear-gradient(to bottom, #5bc0de, #31b0d5); border-color: #2a96b1; display: block; margin: 10px auto; }
-.nav-button { background-color: #007bff; background-image: linear-gradient(to bottom, #269abc, #007bff); border-color: #0056b3; display: inline-block; margin: 6px 3px; }
-#start-game-button { display: block; width: 120px; margin: 12px auto 0 auto; }
+/* Nav Button General Style (also applies to mode buttons) */
+.nav-button {
+     padding: 6px 12px;
+     font-size: 0.85em;
+     font-weight: bold; margin: 3px 6px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.3); border-bottom-width: 2px; cursor: pointer; color: white; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: all 0.15s ease; position: relative; top: 0;
+     background-color: #007bff; background-image: linear-gradient(to bottom, #269abc, #007bff); border-color: #0056b3;
+     display: inline-block; /* Important for nav buttons */
+}
 
-/* Button Hover/Active States (simplified slightly) */
-#player-actions button:hover:not(:disabled),
-#new-game-button:hover:not(:disabled),
-#export-logs-button:hover:not(:disabled),
-.nav-button:hover:not(:disabled) { box-shadow: 0 2px 4px rgba(0,0,0,0.3); top: -1px; filter: brightness(1.1); } /* Added brightness */
 
-#new-game-button:active:not(:disabled),
-#export-logs-button:active:not(:disabled),
-#player-actions button:active:not(:disabled),
-.nav-button:active:not(:disabled) { top: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.2); border-bottom-width: 1px; filter: brightness(0.95); }
+/* Specific Button Colors */
+.play-button { background-color: #4CAF50; background-image: linear-gradient(to bottom, #5cb85c, #449d44); border-color: #398439; }
+.pass-button { background-color: #ff9800; background-image: linear-gradient(to bottom, #ffa726, #fb8c00); border-color: #e65100; }
+.clear-selection-button { background-color: #9e9e9e; background-image: linear-gradient(to bottom, #bdbdbd, #757575); border-color: #616161; }
+/* Color for New Game buttons in nav */
+#nav-3p-new, #nav-1v1-new { background-color: #dc3545; background-image: linear-gradient(to bottom, #d9534f, #c9302c); border-color: #ac2925; }
 
-#player-actions button:disabled { background-color: #ccc; background-image: none; border-color: #bbb; color: #999; cursor: not-allowed; box-shadow: none; text-shadow: none; }
+
+/* Button Hover/Active States */
+.play-button:hover:not(:disabled),
+.pass-button:hover:not(:disabled),
+.clear-selection-button:hover:not(:disabled),
+.nav-button:hover:not(:disabled) { /* Combined hover */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3); top: -1px; filter: brightness(1.1);
+}
+
+.play-button:active:not(:disabled),
+.pass-button:active:not(:disabled),
+.clear-selection-button:active:not(:disabled),
+.nav-button:active:not(:disabled) { /* Combined active */
+    top: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.2); border-bottom-width: 1px; filter: brightness(0.95);
+}
+
+.play-button:disabled,
+.pass-button:disabled,
+.clear-selection-button:disabled { /* Disable styling */
+     background-color: #ccc; background-image: none; border-color: #bbb; color: #999; cursor: not-allowed; box-shadow: none; text-shadow: none;
+}
 
 /* Game Page Specific Styles */
-.game-nav-buttons { text-align: center; margin-bottom: 8px; }
+.game-toggle { /* Positioning for the AI toggle */
+    text-align: right;
+    margin-bottom: 5px;
+    padding-right: 5px;
+}
 
-/* --- Added AI Reasoning Toggle Styles --- */
+
+/* --- AI Reasoning Toggle Styles --- */
 .toggle-switch {
     display: inline-block;
     vertical-align: middle;
@@ -95,36 +167,50 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
 }
 
 
-/* Game board grid layout */
-#game-board {
+/* Game board grid layout (Common) */
+.game-board {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr; /* *** Adjusted middle column proportion *** */
-    grid-template-rows: auto auto;
-    gap: 8px; /* *** FURTHER REDUCED gap *** */
+    gap: 8px;
     align-items: start;
     margin-bottom: 10px;
 }
-#computer-1 { grid-column: 1; grid-row: 1; }
-#play-area { grid-column: 2; grid-row: 1; text-align: center;}
-#computer-2 { grid-column: 3; grid-row: 1; }
-#human-player { grid-column: 1 / 4; grid-row: 2; }
 
-/* Styling for each player's area */
+/* --- 3 Player Layout --- */
+#game-board-3player {
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: auto auto;
+}
+#computer-1-3p { grid-column: 1; grid-row: 1; }
+#play-area-3p { grid-column: 2; grid-row: 1; text-align: center;}
+#computer-2-3p { grid-column: 3; grid-row: 1; }
+#human-player-3p { grid-column: 1 / 4; grid-row: 2; }
+
+/* --- 1 vs 1 Layout --- */
+#game-board-1v1 {
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    grid-template-rows: auto auto;
+}
+#computer-1-1v1 { grid-column: 1; grid-row: 1; } /* Computer top-left */
+#play-area-1v1 { grid-column: 2; grid-row: 1; text-align: center;} /* Play area top-right */
+#human-player-1v1 { grid-column: 1 / 3; grid-row: 2; } /* Human spans bottom */
+
+
+/* Styling for each player's area (Common) */
 .player-area {
-    border: 1px solid #ccc; padding: 8px; /* *** REDUCED padding & border *** */
-    min-height: 110px; /* *** REDUCED min-height *** */
+    border: 1px solid #ccc; padding: 8px;
+    min-height: 110px;
     background-color: rgba(255, 255, 255, 0.08); border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 0 6px rgba(0,0,0,0.1);
     transition: border-color 0.4s ease-in-out, box-shadow 0.4s ease-in-out, opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
 }
 .player-area.current-player {
-    border-color: #ffc107; border-width: 2px; /* Make highlight stand out more */
+    border-color: #ffc107; border-width: 2px;
     box-shadow: 0 0 10px rgba(255, 193, 7, 0.5), inset 0 0 6px rgba(0,0,0,0.1);
 }
-.player-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 0.95em; margin-bottom: 4px; } /* Reduced H2 size */
+.player-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 0.95em; margin-bottom: 4px; }
 
 /* Style for passed players */
 .player-area.player-passed { opacity: 0.55; filter: grayscale(60%); border-color: #777; box-shadow: 0 1px 1px rgba(0,0,0,0.1), inset 0 0 4px rgba(0,0,0,0.1); }
-.player-area.player-passed:not(.player-wins) { border-color: #777; border-width: 1px; } /* Ensure border stays thin */
+.player-area.player-passed:not(.player-wins) { border-color: #777; border-width: 1px; }
 .player-area.current-player.player-passed:not(.player-wins) { border-color: #999; border-width: 1px; box-shadow: 0 0 4px rgba(150, 150, 150, 0.4), inset 0 0 4px rgba(0,0,0,0.1); }
 
 /* Player Info Container */
@@ -132,46 +218,46 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
 .card-count { font-weight: bold; margin-right: 6px; }
 
 /* General styling for hand display areas */
-.hand { display: flex; flex-wrap: wrap; justify-content: center; min-height: 25px; gap: 2px; /* *** REDUCED gap *** */ padding-top: 2px; padding-bottom: 2px; }
+.hand { display: flex; flex-wrap: wrap; justify-content: center; min-height: 25px; gap: 2px; padding-top: 2px; padding-bottom: 2px; }
 .hand-group-container { margin-bottom: 6px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 3px; }
 .hand-group-container label { display: block; text-align: left; font-size: 0.8em; color: #ddd; margin-bottom: 2px; margin-left: 3px; text-shadow: none; }
-.hand-group { min-height: 48px; /* *** REDUCED min-height *** */ background-color: rgba(0,0,0,0.08); border-radius: 2px; padding: 3px; }
+.hand-group { min-height: 48px; background-color: rgba(0,0,0,0.08); border-radius: 2px; padding: 3px; }
 
 /* Styling for individual cards */
 .card {
-    border: 1px solid black; padding: 6px 3px; /* *** REDUCED padding *** */
-    min-width: 34px; /* *** REDUCED min-width *** */
-    min-height: 52px; /* *** REDUCED min-height *** */
-    text-align: center; background-color: white; border-radius: 2px; /* *** REDUCED radius *** */ cursor: pointer; user-select: none; display: inline-flex; justify-content: center; align-items: center;
-    font-size: 10px; /* *** REDUCED font-size *** */
+    border: 1px solid black; padding: 6px 3px;
+    min-width: 34px;
+    min-height: 52px;
+    text-align: center; background-color: white; border-radius: 2px; cursor: pointer; user-select: none; display: inline-flex; justify-content: center; align-items: center;
+    font-size: 10px;
     font-weight: bold; box-sizing: border-box; box-shadow: 1px 1px 1px rgba(0,0,0,0.15);
-    transition: transform 0.1s ease-in-out, border-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out; /* Faster transition */
+    transition: transform 0.1s ease-in-out, border-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
     position: relative;
 }
 .card.selected { border-color: #ffc107; border-width: 2px; transform: translateY(-2px) scale(1.01); box-shadow: 1px 2px 3px rgba(255, 193, 7, 0.4); }
 .card-back { background-color: #6c757d; background-image: linear-gradient(135deg, #6c757d 25%, #495057 25%, #495057 50%, #6c757d 50%, #6c757d 75%, #495057 75%, #495057 100%); background-size: 25px 25px; color: transparent; border: 1px solid #343a40; cursor: default; }
 
-/* Styling for the central play area sections */
-#play-area { background-color: rgba(255, 255, 255, 0.12); border-radius: 5px; padding: 6px; }
-#play-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1em; margin-bottom: 4px;}
-#play-area h3 { font-size: 0.85em; color: #eee; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 1px; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
-#play-log-area { margin-bottom: 8px; text-align: left; max-height: 100px; /* Reduced height */ overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); background-color: rgba(255,255,255,0.7); padding: 3px; border-radius: 2px; }
-#play-log .log-entry { font-size: 0.8em; margin-bottom: 1px; padding-bottom: 1px; border-bottom: 1px dotted #ccc; color: #333; line-height: 1.3; }
-#play-log .log-entry:last-child { border-bottom: none; margin-bottom: 0; }
-#play-log .log-event-round-end { font-weight: bold; color: #155724; background-color: #d4edda; padding: 2px; border-radius: 2px; }
-#play-log .log-event-pass { color: #555; font-style: italic; text-align: center; border-bottom-style: dashed; }
-#last-played-area { margin-top: 6px; }
-#last-played { min-height: 58px; /* Reduced height */ display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; padding: 6px; border: 1px dashed #aaa; border-radius: 2px; background-color: rgba(255,255,255,0.7); }
-#last-played .card { cursor: default; box-shadow: none; animation: cardPlayedAnimation 0.4s ease-out forwards; } /* Faster animation */
-#play-area > p { margin-bottom: 8px; font-weight: bold; font-size: 0.95em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); } /* Status message */
+/* Styling for the central play area sections (Common Class) */
+.play-area { background-color: rgba(255, 255, 255, 0.12); border-radius: 5px; padding: 6px; }
+.play-area h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); font-size: 1em; margin-bottom: 4px;}
+.play-area h3 { font-size: 0.85em; color: #eee; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 1px; text-shadow: 1px 1px 1px rgba(0,0,0,0.2); }
+.play-log-area { margin-bottom: 8px; text-align: left; max-height: 100px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.1); background-color: rgba(255,255,255,0.7); padding: 3px; border-radius: 2px; }
+.play-log .log-entry { font-size: 0.8em; margin-bottom: 1px; padding-bottom: 1px; border-bottom: 1px dotted #ccc; color: #333; line-height: 1.3; }
+.play-log .log-entry:last-child { border-bottom: none; margin-bottom: 0; }
+.play-log .log-event-round-end { font-weight: bold; color: #155724; background-color: #d4edda; padding: 2px; border-radius: 2px; }
+.play-log .log-event-pass { color: #555; font-style: italic; text-align: center; border-bottom-style: dashed; }
+.last-played-area { margin-top: 6px; }
+.last-played { min-height: 58px; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; padding: 6px; border: 1px dashed #aaa; border-radius: 2px; background-color: rgba(255,255,255,0.7); }
+.last-played .card { cursor: default; box-shadow: none; animation: cardPlayedAnimation 0.4s ease-out forwards; }
+.play-area > p { margin-bottom: 8px; font-weight: bold; font-size: 0.95em; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); } /* Status message */
 
 /* Last Play Description Text */
-.last-played-text { text-align: center; color: #eee; font-size: 0.85em; font-weight: bold; margin-top: 4px; margin-bottom: 0; min-height: 1.1em; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); } /* Made bold */
+.last-played-text { text-align: center; color: #eee; font-size: 0.85em; font-weight: bold; margin-top: 4px; margin-bottom: 0; min-height: 1.1em; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
 
-/* Player action buttons area */
-#player-actions { margin-top: 8px; text-align: center; }
+/* Player action buttons area (Common Class) */
+.player-actions { margin-top: 8px; text-align: center; }
 
-/* --- Added AI Reasoning Box Styles --- */
+/* --- AI Reasoning Box Styles (Common Class) --- */
 .ai-reasoning {
     display: none; /* Hidden by default */
     margin-top: 8px;
@@ -189,18 +275,18 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
     line-height: 1.3;
 }
 /* --- Rule to show reasoning boxes when toggle is active --- */
-#game-board.show-ai-reasoning .ai-reasoning {
+.game-board.show-ai-reasoning .ai-reasoning { /* Target parent */
     display: block;
 }
 
 
-/* Export Controls */
-#export-controls { margin-top: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; background-color: rgba(255, 255, 255, 0.08); color: #eee; }
-#export-controls h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); font-size: 1.0em; }
-#export-controls p { color: #ddd; font-size: 0.85em; margin: 4px 0;}
-#export-controls textarea { width: 100%; margin-top: 6px; font-family: monospace; box-sizing: border-box; min-height: 80px; background-color: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-size: 0.8em; }
+/* Stats Section (Common Class) */
+.stats-section { margin-top: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; background-color: rgba(255, 255, 255, 0.08); color: #eee; text-align: center;}
+.stats-section h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); font-size: 1.0em; }
+.stats-section p { color: #ddd; font-size: 0.85em; margin: 4px 0;}
+
 
 /* --- Animations --- */
-@keyframes cardPlayedAnimation { from { opacity: 0; transform: scale(0.8) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } } /* Adjusted transform */
-@keyframes winnerPulse { 0% { border-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); } 50% { border-color: #ccffcc; box-shadow: 0 0 20px rgba(100, 255, 100, 0.8), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1.015); opacity: 1; filter: grayscale(0%); } 100% { border-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); } } /* Adjusted pulse */
-.player-area.player-wins { animation: winnerPulse 1.5s ease-in-out infinite; border-width: 2px !important; /* Ensure winner border visible */ opacity: 1 !important; filter: grayscale(0%) !important; }
+@keyframes cardPlayedAnimation { from { opacity: 0; transform: scale(0.8) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes winnerPulse { 0% { border-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); } 50% { border-color: #ccffcc; box-shadow: 0 0 20px rgba(100, 255, 100, 0.8), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1.015); opacity: 1; filter: grayscale(0%); } 100% { border-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.6), inset 0 0 10px rgba(0,0,0,0.1); transform: scale(1); opacity: 1; filter: grayscale(0%); } }
+.player-area.player-wins { animation: winnerPulse 1.5s ease-in-out infinite; border-width: 2px !important; opacity: 1 !important; filter: grayscale(0%) !important; }
