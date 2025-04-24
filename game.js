@@ -2335,20 +2335,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- AI Reasoning Toggles ---
+    // **CORRECTED LOGIC**
     document.querySelectorAll('.ai-reasoning-toggle').forEach(toggle => {
         toggle.addEventListener('change', (event) => {
-            const modeSuffix = event.target.id.includes('1v1') ? '-1v1' : '-3p';
-            const gameBoard = document.getElementById(`game-board${modeSuffix}`);
+            const toggleId = event.target.id; // e.g., "ai-reasoning-toggle-3p"
+            console.log(`Toggle changed: ${toggleId}`); // Log which toggle fired
+
+            // Determine the correct game board ID based on the toggle's ID
+            let gameBoardId = null;
+            if (toggleId === 'ai-reasoning-toggle-3p') {
+                gameBoardId = 'game-board-3player';
+            } else if (toggleId === 'ai-reasoning-toggle-1v1') {
+                gameBoardId = 'game-board-1v1';
+            }
+
+            console.log(`Looking for game board: ${gameBoardId}`); // Log the target board ID
+            const gameBoard = gameBoardId ? document.getElementById(gameBoardId) : null;
+
             if (gameBoard) {
+                console.log(`Found game board: ${gameBoard.id}`); // Confirm board found
                 if (event.target.checked) {
                     gameBoard.classList.add('show-ai-reasoning');
-                    console.log(`AI Reasoning (${modeSuffix}): Shown`);
+                    console.log(`AI Reasoning for ${gameBoardId}: Shown`);
                 } else {
                     gameBoard.classList.remove('show-ai-reasoning');
-                    console.log(`AI Reasoning (${modeSuffix}): Hidden`);
+                    console.log(`AI Reasoning for ${gameBoardId}: Hidden`);
                 }
             } else {
-                 console.error(`Game board element not found for mode suffix: ${modeSuffix}`);
+                 console.error(`Game board element not found for ID: ${gameBoardId} (triggered by ${toggleId})`);
             }
         });
     });
