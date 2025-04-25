@@ -280,10 +280,52 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
 }
 
 
-/* Stats Section (Common Class) */
-.stats-section { margin-top: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; background-color: rgba(255, 255, 255, 0.08); color: #eee; text-align: center;}
-.stats-section h2 { margin-top: 0; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); font-size: 1.0em; }
-.stats-section p { color: #ddd; font-size: 0.85em; margin: 4px 0;}
+/* --- Updated Stats Section --- */
+.stats-section {
+    margin-top: 20px; /* Increased top margin */
+    padding: 15px;    /* Increased padding */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Slightly more visible border */
+    border-radius: 8px; /* Slightly larger border radius */
+    background-color: rgba(0, 0, 0, 0.2); /* Darker background for contrast */
+    color: #eee;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Add a subtle shadow */
+}
+
+.stats-section h2 {
+    margin-top: 0;
+    margin-bottom: 12px; /* Increased space below heading */
+    padding-bottom: 5px; /* Add padding below text */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* Add a separator line */
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+    font-size: 1.1em; /* Slightly larger heading */
+    color: #fff;     /* Make heading white */
+}
+
+/* Container for the stat items to use flexbox */
+.stats-items {
+    display: flex;
+    justify-content: space-around; /* Distribute items evenly */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    gap: 10px; /* Add gap between items */
+    text-align: center; /* Center text within each item */
+}
+
+.stats-section p { /* Style individual stat paragraphs */
+    color: #ddd;
+    font-size: 0.9em; /* Slightly larger text */
+    margin: 5px 0;
+    background-color: rgba(255, 255, 255, 0.05); /* Optional: Slight background for each stat */
+    padding: 5px 8px; /* Add padding to stat items */
+    border-radius: 4px; /* Rounded corners for stat items */
+    min-width: 120px; /* Ensure items have some minimum width */
+}
+
+/* Make sure spans inside the paragraphs are styled if needed */
+.stats-section p span {
+    font-weight: bold;
+    color: #fff; /* Make the number stand out */
+}
 
 
 /* --- Animations --- */
