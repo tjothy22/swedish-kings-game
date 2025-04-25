@@ -15,21 +15,15 @@
         <div id="nav-buttons-container">
             <div id="nav-mode-selection" class="nav-button-set" style="display: none;">
                 </div>
-            <div id="nav-rules" class="nav-button-set" style="display: none;">
-                <button id="nav-rules-to-3p" class="nav-button">3 Player Game</button>
-                <button id="nav-rules-to-1v1" class="nav-button">1 vs 1 Game</button>
-                <button id="nav-rules-to-mode" class="nav-button">Choose Mode</button>
-            </div>
             <div id="nav-3player" class="nav-button-set" style="display: none;">
                 <button id="nav-3p-new" class="nav-button">New Game</button>
                 <button id="nav-3p-to-1v1" class="nav-button">1 vs 1 Game</button>
-                <button id="nav-3p-to-rules" class="nav-button">Rules</button>
-            </div>
+                <button id="nav-3p-back-to-mode" class="nav-button">Rules</button> </div>
+
             <div id="nav-1v1" class="nav-button-set" style="display: none;">
                  <button id="nav-1v1-new" class="nav-button">New Game</button>
                  <button id="nav-1v1-to-3p" class="nav-button">3 Player Game</button>
-                 <button id="nav-1v1-to-rules" class="nav-button">Rules</button>
-            </div>
+                 <button id="nav-1v1-back-to-mode" class="nav-button">Rules</button> </div>
         </div>
     </nav>
 
@@ -37,17 +31,16 @@
 
         <div id="mode-selection-page" class="page-container" style="display: block;">
             <h2>Choose Game Mode</h2>
-            <div class="mode-selection-buttons">
+
+            <div class="mode-selection-group mode-buttons-main">
                 <button id="start-3player-button" class="nav-button mode-button">3 Players</button>
                 <button id="start-1v1-button" class="nav-button mode-button">1 vs 1</button>
-                <button id="show-rules-from-selection" class="nav-button mode-button">Rules</button>
             </div>
-        </div>
 
-        <div id="rules-page" class="page-container" style="display: none;">
-            <h2>How to Play Swedish Kings</h2>
-            <div class="rules-content">
-                <h3>Objective</h3>
+            <hr class="mode-rules-separator">
+
+            <div class="rules-content rules-on-homepage">
+                <h2>How to Play</h2> <h3>Objective</h3>
                 <p>Be the first player to get rid of all your cards.</p>
                 <h3>Game Modes</h3>
                 <ul>
@@ -106,7 +99,6 @@
                 </ul>
             </div>
              </div>
-
         <div id="game-page-3player" class="page-container" style="display: none;">
             <div class="toggle-switch game-toggle"> <input type="checkbox" id="ai-reasoning-toggle-3p" class="ai-reasoning-toggle">
                  <label for="ai-reasoning-toggle-3p">Show AI Reasoning</label>
@@ -148,11 +140,13 @@
             </div>
             <div id="stats-controls-3p" class="stats-section">
                 <h2>Game Statistics (This Session)</h2>
-                <p>Games Played: <span id="stats-games-played">0</span></p>
-                <p>Games Won (You): <span id="stats-games-won">0</span></p>
-                <p>Win Percentage: <span id="stats-win-percentage">N/A</span></p>
+                <div class="stats-items">
+                    <p>Games Played: <span id="stats-games-played">0</span></p>
+                    <p>Games Won (You): <span id="stats-games-won">0</span></p>
+                    <p>Win Percentage: <span id="stats-win-percentage">N/A</span></p>
+                </div>
             </div>
-        </div>
+             </div>
 
         <div id="game-page-1v1" class="page-container" style="display: none;">
              <div class="toggle-switch game-toggle"> <input type="checkbox" id="ai-reasoning-toggle-1v1" class="ai-reasoning-toggle">
@@ -187,14 +181,17 @@
                     </div>
                 </div>
             </div>
-            <div id="stats-controls-1v1" class="stats-section">
+             <div id="stats-controls-1v1" class="stats-section">
                  <h2>Game Statistics (This Session)</h2>
-                <p>Games Played: <span id="stats-games-played-1v1">0</span></p>
-                <p>Games Won (You): <span id="stats-games-won-1v1">0</span></p>
-                <p>Win Percentage: <span id="stats-win-percentage-1v1">N/A</span></p>
+                 <div class="stats-items">
+                    <p>Games Played: <span id="stats-games-played-1v1">0</span></p>
+                    <p>Games Won (You): <span id="stats-games-won-1v1">0</span></p>
+                    <p>Win Percentage: <span id="stats-win-percentage-1v1">N/A</span></p>
+                </div>
             </div>
-        </div>
+             </div>
 
-    </div> <script src="game.js"></script>
+    </div>
+    <script src="game.js"></script>
 </body>
 </html>

@@ -605,8 +605,19 @@ function logEvent(message, type = 'info') {
  * @param {string} pageIdToShow - The ID of the page container div to show.
  */
 function showPage(pageIdToShow) {
-    const pageIds = ['mode-selection-page', 'rules-page', 'game-page-3player', 'game-page-1v1'];
-    const navSetIds = ['nav-mode-selection', 'nav-rules', 'nav-3player', 'nav-1v1'];
+    // 'rules-page' removed from pageIds
+    const pageIds = [
+        'mode-selection-page',
+        'game-page-3player',
+        'game-page-1v1'
+    ];
+    // 'nav-rules' removed from navSetIds
+    const navSetIds = [
+        'nav-mode-selection',
+        // 'nav-rules', // Keep this commented or remove if #nav-rules div is removed from HTML
+        'nav-3player',
+        'nav-1v1'
+    ];
     let navIdToShow = 'nav-mode-selection'; // Default nav state
 
     // Hide all pages and nav sets first
@@ -620,14 +631,13 @@ function showPage(pageIdToShow) {
     });
 
     // Determine which nav set to show based on the page
-    if (pageIdToShow === 'rules-page') {
-        navIdToShow = 'nav-rules';
-    } else if (pageIdToShow === 'game-page-3player') {
+    // Logic for 'rules-page' removed
+    if (pageIdToShow === 'game-page-3player') {
         navIdToShow = 'nav-3player';
     } else if (pageIdToShow === 'game-page-1v1') {
         navIdToShow = 'nav-1v1';
     }
-    // For 'mode-selection-page', navIdToShow remains 'nav-mode-selection' (which is empty/hidden)
+    // For 'mode-selection-page', navIdToShow remains 'nav-mode-selection'
 
     // Show the target page
     const pageElement = document.getElementById(pageIdToShow);
@@ -642,13 +652,18 @@ function showPage(pageIdToShow) {
     if (navElement) {
         navElement.style.display = 'block'; // Or 'flex', 'inline-block' depending on CSS
     } else {
-         console.error(`showPage: Nav element not found for ID: ${navIdToShow}`);
+         // It's expected nav-mode-selection might not be found or needed, so lower log level
+         // Also check if nav-rules was targeted but removed
+         if (navIdToShow !== 'nav-mode-selection' && navIdToShow !== 'nav-rules') {
+            console.error(`showPage: Nav element not found for ID: ${navIdToShow}`);
+         }
     }
 
 
     window.scrollTo(0, 0); // Scroll to top when changing pages
     console.log(`Showing page: ${pageIdToShow}, Nav: ${navIdToShow}`);
 }
+
 
 /**
  * Handles clicks on cards in the human player's hand.
@@ -2237,7 +2252,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Mode Selection Buttons (on Home Page) ---
     const start3PlayerButton = document.getElementById('start-3player-button');
     const start1v1Button = document.getElementById('start-1v1-button');
-    const showRulesFromSelection = document.getElementById('show-rules-from-selection');
 
     if (start3PlayerButton) {
         start3PlayerButton.addEventListener('click', () => initializeGame('3player'));
@@ -2247,12 +2261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         start1v1Button.addEventListener('click', () => initializeGame('1v1'));
     } else { console.error("Start 1v1 button not found"); }
 
-     if (showRulesFromSelection) {
-        showRulesFromSelection.addEventListener('click', () => showPage('rules-page'));
-    } else { console.error("Show Rules (from selection) button not found"); }
-
-
-    // --- Top Navigation Button Listeners ---
+    // --- Top Navigation Button Listeners (Updated) ---
     const navContainer = document.getElementById('nav-buttons-container');
     if (navContainer) {
         navContainer.addEventListener('click', (event) => {
@@ -2262,7 +2271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Nav button clicked:", buttonId);
 
             switch (buttonId) {
-                // Rules Page Nav
+                // Rules Page Nav (Potentially remove these cases if #nav-rules is removed from HTML)
                 case 'nav-rules-to-3p':
                     initializeGame('3player');
                     break;
@@ -2275,40 +2284,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 3 Player Game Nav
                 case 'nav-3p-new':
-                    // **MODIFIED**: Restart game in current mode (3p)
                     if (gameState.gameMode === '3player') {
                         initializeGame('3player');
                     } else {
                         console.warn("New game (3p) clicked, but current mode is not 3p. Re-initializing 3p.");
-                        initializeGame('3player'); // Fallback or handle as error?
+                        initializeGame('3player');
                     }
                     break;
                 case 'nav-3p-to-1v1':
                     initializeGame('1v1'); // Start new 1v1 game directly
                     break;
-                case 'nav-3p-to-rules':
-                    showPage('rules-page');
+                case 'nav-3p-back-to-mode': // ** NEW CASE **
+                    showPage('mode-selection-page'); // Go back to mode page (where rules are)
                     break;
 
                 // 1v1 Game Nav
                 case 'nav-1v1-new':
-                     // **MODIFIED**: Restart game in current mode (1v1)
                      if (gameState.gameMode === '1v1') {
                          initializeGame('1v1');
                      } else {
                          console.warn("New game (1v1) clicked, but current mode is not 1v1. Re-initializing 1v1.");
-                         initializeGame('1v1'); // Fallback or handle as error?
+                         initializeGame('1v1');
                      }
                     break;
                 case 'nav-1v1-to-3p':
                      initializeGame('3player'); // Start new 3p game directly
                     break;
-                case 'nav-1v1-to-rules':
-                     showPage('rules-page');
+                case 'nav-1v1-back-to-mode': // ** NEW CASE **
+                     showPage('mode-selection-page'); // Go back to mode page (where rules are)
                     break;
 
                 default:
-                    console.warn("Unhandled nav button click:", buttonId);
+                    // Avoid warning for clicks on potentially removed rules nav buttons
+                    if (!buttonId.startsWith('nav-rules-')) {
+                         console.warn("Unhandled nav button click:", buttonId);
+                    }
             }
         });
     } else {
@@ -2335,7 +2345,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- AI Reasoning Toggles ---
-    // **CORRECTED LOGIC**
     document.querySelectorAll('.ai-reasoning-toggle').forEach(toggle => {
         toggle.addEventListener('change', (event) => {
             const toggleId = event.target.id; // e.g., "ai-reasoning-toggle-3p"

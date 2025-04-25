@@ -54,43 +54,89 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
     box-sizing: border-box;
 }
 
-/* --- Mode Selection Page --- */
-#mode-selection-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 20px; }
-.mode-selection-buttons {
+/* --- Mode Selection Page (Homepage) --- */
+#mode-selection-page h2 {
+    color: #eee;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+    margin-bottom: 30px; /* Space below title */
+    font-size: 1.3em; /* Slightly larger title */
+}
+
+/* Style for the groups containing buttons */
+.mode-selection-group {
     text-align: center;
-    padding: 20px 0;
-    display: flex; /* Use flexbox for equal sizing */
-    justify-content: center; /* Center buttons */
-    gap: 15px; /* Space between buttons */
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    margin-bottom: 20px; /* Space below button group */
 }
+
+/* Style for the main game mode button group */
+.mode-buttons-main {
+    display: flex;
+    justify-content: center; /* Center buttons horizontally */
+    gap: 20px; /* Increased gap between main buttons */
+    flex-wrap: wrap;
+}
+
+/* General style for game mode buttons */
 .mode-button {
-    flex: 1; /* Allow buttons to grow */
-    min-width: 150px; /* Minimum width */
-    max-width: 200px; /* Maximum width */
-    padding: 10px 15px !important; /* Larger padding */
-    font-size: 1em !important; /* Larger font */
-    margin: 5px !important; /* Reset margin for flex items */
+    padding: 12px 25px !important; /* Larger padding */
+    font-size: 1.1em !important;   /* Larger font */
+    min-width: 160px;              /* Minimum width */
+    margin: 5px !important;        /* Keep some margin */
+    border-radius: 6px !important; /* Slightly more rounded */
+    flex-grow: 0; /* Prevent buttons from stretching excessively */
+    flex-shrink: 0;
 }
 
+/* Separator line between buttons and rules */
+.mode-rules-separator {
+    border: none;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.15);
+    margin: 35px auto 25px auto; /* Top margin, L/R auto, Bottom margin */
+    width: 80%; /* Make line slightly shorter than container */
+}
 
-/* Rules Page Specific Styles */
-#rules-page h2 { color: #eee; text-shadow: 1px 1px 1px rgba(0,0,0,0.4); margin-bottom: 12px; }
+/* --- Styling for Rules Content (Now on Homepage) --- */
+/* Reuse existing rules-content styles, potentially add specifics */
 .rules-content {
     background-color: rgba(255, 255, 255, 0.8);
-    padding: 15px; /* Increased padding */
+    padding: 20px; /* Increased padding */
     border-radius: 5px;
-    margin-bottom: 15px; /* Increased margin */
+    margin-bottom: 15px; /* Keep some margin at the bottom */
     color: #333;
     text-align: left;
     font-size: 0.9em;
 }
-.rules-content h3 {
-    color: #3a6f3a; border-bottom: 1px solid #3a6f3a; padding-bottom: 3px; margin-top: 12px; margin-bottom: 8px; text-align: left;
+/* Ensure the H2 inside rules content looks good */
+.rules-content h2 {
+    color: #3a6f3a;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    text-shadow: none;
 }
-.rules-content ul, .rules-content ol { margin-left: 18px; line-height: 1.5; } /* Adjusted spacing */
-.rules-content ul li { margin-bottom: 4px; }
-.rules-content strong { color: #c82333; }
+.rules-content h3 {
+    color: #3a6f3a;
+    border-bottom: 1px solid #3a6f3a;
+    padding-bottom: 3px;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    text-align: left;
+    font-size: 1em; /* Make rule subheadings slightly larger */
+}
+.rules-content ul, .rules-content ol {
+    margin-left: 18px;
+    line-height: 1.5;
+    padding-left: 10px; /* Add slight indent */
+}
+.rules-content ul li, .rules-content ol li {
+    margin-bottom: 6px; /* Slightly more space between list items */
+}
+.rules-content strong {
+    color: #c82333;
+}
+/* --- End Rules Content Styling --- */
+
 
 /* Button Styles (General - for non-nav buttons if any remain) */
 .play-button,     /* Use class for play buttons */
@@ -326,6 +372,7 @@ h3 { text-align: center; margin-top: 0.3em; margin-bottom: 0.3em; color: #555; f
     font-weight: bold;
     color: #fff; /* Make the number stand out */
 }
+/* --- End Updated Stats Section --- */
 
 
 /* --- Animations --- */
